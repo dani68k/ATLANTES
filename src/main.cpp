@@ -1,28 +1,7 @@
-/*  Rui Santos & Sara Santos - Random Nerd Tutorials
-    THIS EXAMPLE WAS TESTED WITH THE FOLLOWING HARDWARE:
-    1) ESP32-2432S028R 2.8 inch 240×320 also known as the Cheap Yellow Display (CYD): https://makeradvisor.com/tools/cyd-cheap-yellow-display-esp32-2432s028r/
-      SET UP INSTRUCTIONS: https://RandomNerdTutorials.com/cyd/
-    2) REGULAR ESP32 Dev Board + 2.8 inch 240x320 TFT Display: https://makeradvisor.com/tools/2-8-inch-ili9341-tft-240x320/ and https://makeradvisor.com/tools/esp32-dev-board-wi-fi-bluetooth/
-      SET UP INSTRUCTIONS: https://RandomNerdTutorials.com/esp32-tft/
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
-    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-#include <SPI.h>
-
-/*  Install the "TFT_eSPI" library by Bodmer to interface with the TFT Display - https://github.com/Bodmer/TFT_eSPI
-    *** IMPORTANT: User_Setup.h available on the internet will probably NOT work with the examples available at Random Nerd Tutorials ***
-    *** YOU MUST USE THE User_Setup.h FILE PROVIDED IN THE LINK BELOW IN ORDER TO USE THE EXAMPLES FROM RANDOM NERD TUTORIALS ***
-    FULL INSTRUCTIONS AVAILABLE ON HOW CONFIGURE THE LIBRARY: https://RandomNerdTutorials.com/cyd/ or https://RandomNerdTutorials.com/esp32-tft/   
-    IMPORTANT: CHECK IF YOUR DISPLAY NEEDS INVERTION ACTIVED IN THE User_Setup.h FILE
-               uncomment TFT_INVERSION_ON or TFT_INVERSION_OFF to fit your color scheme*/
+#include <lvgl.h>
 #include <TFT_eSPI.h>
-
-// Install the "XPT2046_Touchscreen" library by Paul Stoffregen to use the Touchscreen - https://github.com/PaulStoffregen/XPT2046_Touchscreen
-// Note: this library doesn't require further configuration
 #include <XPT2046_Touchscreen.h>
-
-TFT_eSPI tft = TFT_eSPI();
+#include "ui.h"
 
 // Touchscreen pins
 #define XPT2046_IRQ 36   // T_IRQ
@@ -34,75 +13,26 @@ TFT_eSPI tft = TFT_eSPI();
 SPIClass touchscreenSPI = SPIClass(VSPI);
 XPT2046_Touchscreen touchscreen(XPT2046_CS, XPT2046_IRQ);
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
-#define FONT_SIZE 2
+#define SCREEN_WIDTH 240
+#define SCREEN_HEIGHT 320
 
 // Touchscreen coordinates: (x, y) and pressure (z)
 int x, y, z;
 
-// Print Touchscreen info about X, Y and Pressure (Z) on the Serial Monitor
-void printTouchToSerial(int touchX, int touchY, int touchZ) {
-  Serial.print("X = ");
-  Serial.print(touchX);
-  Serial.print(" | Y = ");
-  Serial.print(touchY);
-  Serial.print(" | Pressure = ");
-  Serial.print(touchZ);
-  Serial.println();
+#define DRAW_BUF_SIZE (SCREEN_WIDTH * SCREEN_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))
+uint32_t draw_buf[DRAW_BUF_SIZE / 4];
+
+// If logging is enabled, it will inform the user about what is happening in the library
+void log_print(lv_log_level_t level, const char * buf) {
+  LV_UNUSED(level);
+  Serial.println(buf);
+  Serial.flush();
 }
 
-// Print Touchscreen info about X, Y and Pressure (Z) on the TFT Display
-void printTouchToDisplay(int touchX, int touchY, int touchZ) {
-  // Clear TFT screen
-  tft.fillScreen(TFT_WHITE);
-  tft.setTextColor(TFT_BLACK, TFT_WHITE);
-
-  int centerX = SCREEN_WIDTH / 2;
-  int textY = 80;
- 
-  String tempText = "X = " + String(touchX);
-  tft.drawCentreString(tempText, centerX, textY, FONT_SIZE);
-
-  textY += 20;
-  tempText = "Y = " + String(touchY);
-  tft.drawCentreString(tempText, centerX, textY, FONT_SIZE);
-
-  textY += 20;
-  tempText = "Pressure = " + String(touchZ);
-  tft.drawCentreString(tempText, centerX, textY, FONT_SIZE);
-}
-
-void setup() {
-  Serial.begin(115200);
-
-  // Start the SPI for the touchscreen and init the touchscreen
-  touchscreenSPI.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
-  touchscreen.begin(touchscreenSPI);
-  // Set the Touchscreen rotation in landscape mode
-  // Note: in some displays, the touchscreen might be upside down, so you might need to set the rotation to 3: touchscreen.setRotation(3);
-  touchscreen.setRotation(1);
-
-  // Start the tft display
-  tft.init();
-  // Set the TFT display rotation in landscape mode
-  tft.setRotation(1);
-
-  // Clear the screen before writing to it
-  tft.fillScreen(TFT_WHITE);
-  tft.setTextColor(TFT_BLACK, TFT_WHITE);
-  
-  // Set X and Y coordinates for center of display
-  int centerX = SCREEN_WIDTH / 2;
-  int centerY = SCREEN_HEIGHT / 2;
-
-  tft.drawCentreString("Hello, world!", centerX, 30, FONT_SIZE);
-  tft.drawCentreString("Touch screen to test", centerX, centerY, FONT_SIZE);
-}
-
-void loop() {
-  // Checks if Touchscreen was touched, and prints X, Y and Pressure (Z) info on the TFT display and Serial Monitor
-  if (touchscreen.tirqTouched() && touchscreen.touched()) {
+// Get the Touchscreen data
+void touchscreen_read(lv_indev_t * indev, lv_indev_data_t * data) {
+  // Checks if Touchscreen was touched, and prints X, Y and Pressure (Z)
+  if(touchscreen.tirqTouched() && touchscreen.touched()) {
     // Get Touchscreen points
     TS_Point p = touchscreen.getPoint();
     // Calibrate Touchscreen points with map function to the correct width and height
@@ -110,9 +40,60 @@ void loop() {
     y = map(p.y, 240, 3800, 1, SCREEN_HEIGHT);
     z = p.z;
 
-    printTouchToSerial(x, y, z);
-    printTouchToDisplay(x, y, z);
+    data->state = LV_INDEV_STATE_PRESSED;
 
-    delay(100);
+    // Set the coordinates
+    data->point.x = x;
+    data->point.y = y;
+
+    // Print Touchscreen info about X, Y and Pressure (Z) on the Serial Monitor
+    /* Serial.print("X = ");
+    Serial.print(x);
+    Serial.print(" | Y = ");
+    Serial.print(y);
+    Serial.print(" | Pressure = ");
+    Serial.print(z);
+    Serial.println();*/
   }
+  else {
+    data->state = LV_INDEV_STATE_RELEASED;
+  }
+}
+
+void setup() {
+  String LVGL_Arduino = String("LVGL Library Version: ") + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
+  Serial.begin(115200);
+  Serial.println(LVGL_Arduino);
+  
+  // Start LVGL
+  lv_init();
+  // Register print function for debugging
+  lv_log_register_print_cb(log_print);
+
+  // Start the SPI for the touchscreen and init the touchscreen
+  touchscreenSPI.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
+  touchscreen.begin(touchscreenSPI);
+  // Set the Touchscreen rotation in landscape mode
+  // Note: in some displays, the touchscreen might be upside down, so you might need to set the rotation to 0: touchscreen.setRotation(0);
+  touchscreen.setRotation(2);
+
+  // Create a display object
+  lv_display_t * disp;
+  // Initialize the TFT display using the TFT_eSPI library
+  disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));
+  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);
+    
+  // Initialize an LVGL input device object (Touchscreen)
+  lv_indev_t * indev = lv_indev_create();
+  lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+  // Set the callback function to read Touchscreen input
+  lv_indev_set_read_cb(indev, touchscreen_read);
+
+  ui_init();  // Initialize the user interface
+}
+
+void loop() {
+  lv_task_handler();  // let the GUI do its work
+  lv_tick_inc(5);     // tell LVGL how much time has passed
+  delay(5);           // let this time pass
 }
