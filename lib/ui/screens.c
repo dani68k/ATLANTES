@@ -33,6 +33,8 @@ void create_screen_main() {
             lv_obj_t *obj = lv_button_create(parent_obj);
             lv_obj_set_pos(obj, 110, 95);
             lv_obj_set_size(obj, 100, 50);
+            lv_obj_add_event_cb(obj, action_button_main, LV_EVENT_RELEASED, (void *)0);
+            lv_obj_add_event_cb(obj, action_button_main, LV_EVENT_PRESSED, (void *)0);
             {
                 lv_obj_t *parent_obj = obj;
                 {

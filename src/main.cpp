@@ -2,6 +2,7 @@
 #include <TFT_eSPI.h>
 #include <XPT2046_Touchscreen.h>
 #include "ui.h"
+#include "screens.h"
 
 // Touchscreen pins
 #define XPT2046_IRQ 36   // T_IRQ
@@ -60,6 +61,16 @@ void touchscreen_read(lv_indev_t * indev, lv_indev_data_t * data) {
   }
 }
 
+void Runtime() {
+  static unsigned long lastTime = 0;
+  static unsigned long count = 0;
+  unsigned long currentTime = millis();
+  if (currentTime - lastTime >= 1000) { // Check if 1 second has passed
+    lastTime = currentTime;
+    lv_label_set_text(objects.label_1_main, String("Counting: " + String(count++)).c_str());
+  }
+}
+
 void setup() {
   String LVGL_Arduino = String("LVGL Library Version: ") + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
   Serial.begin(115200);
@@ -93,6 +104,7 @@ void setup() {
 }
 
 void loop() {
+  Runtime();
   lv_task_handler();  // let the GUI do its work
   lv_tick_inc(5);     // tell LVGL how much time has passed
   delay(5);           // let this time pass

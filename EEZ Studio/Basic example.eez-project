@@ -108,7 +108,16 @@
     "structures": [],
     "enums": []
   },
-  "actions": [],
+  "actions": [
+    {
+      "objID": "a6c67d00-d8e9-41c6-f9ad-a9db79c4bd9d",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "name": "button_main"
+    }
+  ],
   "userPages": [
     {
       "objID": "4b40eba7-b31a-468a-b887-11dfd0b6637f",
@@ -189,7 +198,22 @@
                 "childStyles": []
               },
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "98a98cc5-f9cd-4c2f-900c-44994b49d040",
+                  "eventName": "RELEASED",
+                  "handlerType": "action",
+                  "action": "button_main",
+                  "userData": 0
+                },
+                {
+                  "objID": "7b4e1b30-d854-474a-8277-64d3ecb25bb0",
+                  "eventName": "PRESSED",
+                  "handlerType": "action",
+                  "action": "button_main",
+                  "userData": 0
+                }
+              ],
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
