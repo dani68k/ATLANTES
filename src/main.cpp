@@ -1,8 +1,9 @@
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include <XPT2046_Touchscreen.h>
-#include "ui.h"
-#include "screens.h"
+#include "ui/ui.h"
+#include "ui/screens.h"
+#include "ui/vars.h"
 
 // Touchscreen pins
 #define XPT2046_IRQ 36   // T_IRQ
@@ -63,11 +64,45 @@ void touchscreen_read(lv_indev_t * indev, lv_indev_data_t * data) {
 
 void Runtime() {
   static unsigned long lastTime = 0;
-  static unsigned long count = 0;
+  static uint32_t count = 0;
   unsigned long currentTime = millis();
   if (currentTime - lastTime >= 1000) { // Check if 1 second has passed
     lastTime = currentTime;
-    lv_label_set_text(objects.label_1_main, String("Counting: " + String(count++)).c_str());
+    char buffer[20];
+    int32_t val = random(0, 100); // Generate a random value between 0 and 100
+    lv_bar_set_value(objects.bar_410, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_435, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_460, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_485, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_510, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_535, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_560, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_585, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_610, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_645, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_680, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_730, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_760, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_810, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_860, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_900, val, LV_ANIM_ON); // Update the progress bar value
+    val = random(0, 100);
+    lv_bar_set_value(objects.bar_940, val, LV_ANIM_ON); // Update the progress bar value  
   }
 }
 
@@ -105,6 +140,7 @@ void setup() {
 
 void loop() {
   Runtime();
+  ui_tick();
   lv_task_handler();  // let the GUI do its work
   lv_tick_inc(5);     // tell LVGL how much time has passed
   delay(5);           // let this time pass
