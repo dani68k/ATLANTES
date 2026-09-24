@@ -68,41 +68,232 @@ void Runtime() {
   unsigned long currentTime = millis();
   if (currentTime - lastTime >= 1000) { // Check if 1 second has passed
     lastTime = currentTime;
-    char buffer[20];
-    int32_t val = random(0, 100); // Generate a random value between 0 and 100
-    lv_bar_set_value(objects.bar_410, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_435, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_460, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_485, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_510, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_535, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_560, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_585, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_610, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_645, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_680, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_730, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_760, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_810, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_860, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_900, val, LV_ANIM_ON); // Update the progress bar value
-    val = random(0, 100);
-    lv_bar_set_value(objects.bar_940, val, LV_ANIM_ON); // Update the progress bar value  
+    byte array[18];
+    array[0] = random(0, 100); // Generate a random value between 0 and 100
+    lv_bar_set_value(objects.bar_410, array[0], LV_ANIM_ON); // Update the progress bar value
+
+    array[1] = random(0, 100);
+    lv_bar_set_value(objects.bar_435, array[1], LV_ANIM_ON); // Update the progress bar value
+        
+    array[2] = random(0, 100);
+    lv_bar_set_value(objects.bar_460, array[2], LV_ANIM_ON); // Update the progress bar value
+
+    array[3] = random(0, 100);
+    lv_bar_set_value(objects.bar_485, array[3], LV_ANIM_ON); // Update the progress bar value
+
+    array[4] = random(0, 100);
+    lv_bar_set_value(objects.bar_510, array[4], LV_ANIM_ON); // Update the progress bar value
+
+    array[5] = random(0, 100);
+    lv_bar_set_value(objects.bar_535, array[5], LV_ANIM_ON); // Update the progress bar value
+
+    array[6] = random(0, 100);
+    lv_bar_set_value(objects.bar_560, array[6], LV_ANIM_ON); // Update the progress bar value
+
+    array[7] = random(0, 100);
+    lv_bar_set_value(objects.bar_585, array[7], LV_ANIM_ON); // Update the progress bar value
+
+    array[8] = random(0, 100);
+    lv_bar_set_value(objects.bar_610, array[8], LV_ANIM_ON); // Update the progress bar value
+
+    array[9] = random(0, 100);
+    lv_bar_set_value(objects.bar_645, array[9], LV_ANIM_ON); // Update the progress bar value
+
+    array[10] = random(0, 100);
+    lv_bar_set_value(objects.bar_680, array[10], LV_ANIM_ON); // Update the progress bar value
+
+    array[11] = random(0, 100);
+    lv_bar_set_value(objects.bar_705, array[11], LV_ANIM_ON); // Update the progress bar value
+    
+    array[12] = random(0, 100);
+    lv_bar_set_value(objects.bar_730, array[12], LV_ANIM_ON);
+    
+    array[13] = random(0, 100);
+    lv_bar_set_value(objects.bar_760, array[13], LV_ANIM_ON);
+
+    array[14] = random(0, 100);
+    lv_bar_set_value(objects.bar_810, array[14], LV_ANIM_ON);
+
+    array[15] = random(0, 100);
+    lv_bar_set_value(objects.bar_860, array[15], LV_ANIM_ON);
+
+    array[16] = random(0, 100);
+    lv_bar_set_value(objects.bar_900, array[16], LV_ANIM_ON);
+    
+    array[17] = random(0, 100);
+    lv_bar_set_value(objects.bar_940, array[17], LV_ANIM_ON);
+
+    byte max_val = 0;
+    for(int i = 0; i < 18; i++) {        
+        if(array[i] > max_val) {
+            max_val = array[i];
+        }
+    }
+
+    char buffer[30];
+    float intensity = 0;
+    lv_label_set_text(objects.label_max_indicator, "NA");
+    if (array[0] == max_val) {
+        lv_obj_set_style_border_opa(objects.bar_410, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[0] / 100;
+        sprintf(buffer, "CH 1 - 410nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa(objects.bar_410, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[1] == max_val) {
+        lv_obj_set_style_border_opa(objects.bar_435, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[1] / 100;
+        sprintf(buffer, "CH 2 - 435nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa(objects.bar_435, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[2] == max_val) {
+        lv_obj_set_style_border_opa(objects.bar_460, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[2] / 100;
+        sprintf(buffer, "CH 3 - 460nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa(objects.bar_460, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[3] == max_val) {
+        lv_obj_set_style_border_opa(objects.bar_485, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[3] / 100;
+        sprintf(buffer, "CH 4 - 485nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa(objects.bar_485, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[4] == max_val) {
+        lv_obj_set_style_border_opa(objects.bar_510, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[4] / 100;
+        sprintf(buffer, "CH 5 - 510nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa(objects.bar_510, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[5] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_535, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[5] / 100;
+        sprintf(buffer, "CH 6 - 535nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_535, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[6] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_560, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[6] / 100;
+        sprintf(buffer, "CH 7 - 560nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_560, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[7] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_585, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[7] / 100;
+        sprintf(buffer, "CH 8 - 585nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_585, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[8] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_610, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[8] / 100;
+        sprintf(buffer, "CH 9 - 610nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_610, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[9] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_645, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[9] / 100;
+        sprintf(buffer, "CH 10 - 645nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_645, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[10] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_680, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[10] / 100;
+        sprintf(buffer, "CH 11 - 680nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_680, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[11] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_705, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[11] / 100;
+        sprintf(buffer, "CH 12 - 705nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_705, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[12] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_730, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[12] / 100;
+        sprintf(buffer, "CH 13 - 730nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_730, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[13] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_760, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[13] / 100;
+        sprintf(buffer, "CH 14 - 760nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_760, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[14] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_810, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[14] / 100;
+        sprintf(buffer, "CH 15 - 810nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_810, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[15] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_860, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[15] / 100;
+        sprintf(buffer, "CH 16 - 860nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_860, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[16] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_900, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[16] / 100;
+        sprintf(buffer, "CH 17 - 900nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_900, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
+
+    if (array[17] == max_val) {
+        lv_obj_set_style_border_opa( objects.bar_940, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        intensity = (float)array[17] / 100;
+        sprintf(buffer, "CH 18 - 940nm - I = %.2f", intensity);
+        lv_label_set_text(objects.label_max_indicator, buffer);
+    } else {
+        lv_obj_set_style_border_opa( objects.bar_940, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    }
   }
 }
 

@@ -17,12 +17,10 @@ enum ScreensEnum {
 
 typedef struct _objects_t {
     lv_obj_t *main;
+    lv_obj_t *label_max_indicator;
     lv_obj_t *obj0;
     lv_obj_t *obj1;
-    lv_obj_t *obj2;
-    lv_obj_t *obj3;
     lv_obj_t *eje_y;
-    lv_obj_t *eje_x;
     lv_obj_t *mark_100;
     lv_obj_t *label_100;
     lv_obj_t *mark_80;
@@ -75,9 +73,9 @@ typedef struct _objects_t {
     lv_obj_t *label_x_610;
     lv_obj_t *label_x_730;
     lv_obj_t *label_x_940;
-    lv_obj_t *obj4;
-    lv_obj_t *obj5;
-    lv_obj_t *obj6;
+    lv_obj_t *eje_x;
+    lv_obj_t *obj2;
+    lv_obj_t *obj3;
 } objects_t;
 
 extern objects_t objects;

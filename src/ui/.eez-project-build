@@ -11,12 +11,10 @@
     "styles.h",
     "ui.c",
     "ui.h",
-    "ui_font_arial.c",
-    "ui_font_sans_flex.c",
-    "ui_image_cam.c",
-    "ui_image_logo.c",
+    "ui_font_awsome.c",
+    "ui_font_montserrat_bold_12.c",
+    "ui_font_montserrat_extra_bold_12.c",
     "ui_image_logo_signal.c",
-    "ui_image_logo_text_spectrometer.c",
     "ui_image_setup.c",
     "vars.h"
   ]
