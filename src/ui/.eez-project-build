@@ -12,7 +12,7 @@
     "ui.c",
     "ui.h",
     "ui_font_awsome.c",
-    "ui_font_montserrat_bold_12.c",
+    "ui_font_montserrat_bold_10.c",
     "ui_font_montserrat_extra_bold_12.c",
     "ui_image_logo_signal.c",
     "ui_image_setup.c",

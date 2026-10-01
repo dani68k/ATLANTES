@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 
-extern const lv_font_t ui_font_montserrat_bold_12;
 extern const lv_font_t ui_font_montserrat_extra_bold_12;
 extern const lv_font_t ui_font_awsome;
+extern const lv_font_t ui_font_montserrat_bold_10;
 
 #ifndef EXT_FONT_DESC_T
 #define EXT_FONT_DESC_T

@@ -1,8 +1,6 @@
 {
   "navigation": {
     "selectedUserPageObject": "[AS7265x Spectroscopy.eez-project]:/userPages/0",
-    "selectedFontObject": "[AS7265x Spectroscopy.eez-project]:/fonts/-1",
-    "selectedBitmapObject": "[AS7265x Spectroscopy.eez-project]:/bitmaps/-1",
     "subnavigationSelectedItems": {}
   },
   "layoutModel": {
@@ -197,6 +195,7 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 56.388392857142854,
+              "selected": 1,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
@@ -223,8 +222,7 @@
                   },
                   "icon": "svg:page"
                 }
-              ],
-              "active": true
+              ]
             },
             {
               "type": "tabset",
@@ -239,7 +237,8 @@
                   "enableClose": false,
                   "icon": "svg:properties"
                 }
-              ]
+              ],
+              "active": true
             }
           ]
         }
@@ -1057,7 +1056,11 @@
       "selectionFront": {},
       "selectionBack": {
         "0": {
-          "2": {},
+          "2": {
+            "20": {
+              "$selected": true
+            }
+          },
           "6": {},
           "9": {}
         }
@@ -1091,7 +1094,7 @@
   "lvglPart": "INDICATOR",
   "lvglState": "DEFAULT",
   "lvglExpandedPropertiesGroup": [
-    "TEXT"
+    "BACKGROUND"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,

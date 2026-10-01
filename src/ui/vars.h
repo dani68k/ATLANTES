@@ -13,10 +13,13 @@ extern "C" {
 // Flow global variables
 
 enum FlowGlobalVariables {
-    FLOW_GLOBAL_VARIABLE_NONE
+    FLOW_GLOBAL_VARIABLE_VAR_VALUE_MEASURE = 0
 };
 
 // Native global variables
+
+extern int32_t get_var_var_value_measure();
+extern void set_var_var_value_measure(int32_t value);
 
 #ifdef __cplusplus
 }

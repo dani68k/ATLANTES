@@ -12,14 +12,15 @@ extern "C" {
 enum ScreensEnum {
     _SCREEN_ID_FIRST = 1,
     SCREEN_ID_MAIN = 1,
-    _SCREEN_ID_LAST = 1
+    SCREEN_ID_SETUP = 2,
+    _SCREEN_ID_LAST = 2
 };
 
 typedef struct _objects_t {
     lv_obj_t *main;
+    lv_obj_t *setup;
     lv_obj_t *label_max_indicator;
     lv_obj_t *obj0;
-    lv_obj_t *obj1;
     lv_obj_t *eje_y;
     lv_obj_t *mark_100;
     lv_obj_t *label_100;
@@ -74,14 +75,41 @@ typedef struct _objects_t {
     lv_obj_t *label_x_730;
     lv_obj_t *label_x_940;
     lv_obj_t *eje_x;
+    lv_obj_t *obj1;
+    lv_obj_t *button_log_main;
     lv_obj_t *obj2;
+    lv_obj_t *button_live_main;
+    lv_obj_t *button_led_main;
+    lv_obj_t *setup_icon;
+    lv_obj_t *label_info_test;
     lv_obj_t *obj3;
+    lv_obj_t *panel_leds;
+    lv_obj_t *obj4;
+    lv_obj_t *roller_ir;
+    lv_obj_t *obj5;
+    lv_obj_t *roller_uv;
+    lv_obj_t *roller_white;
+    lv_obj_t *obj6;
+    lv_obj_t *value_gain;
+    lv_obj_t *panel_gain;
+    lv_obj_t *slide_gain;
+    lv_obj_t *value_integration;
+    lv_obj_t *panel_integration;
+    lv_obj_t *slide_integration;
+    lv_obj_t *value_measuring;
+    lv_obj_t *panel_measuring;
+    lv_obj_t *slide_measure;
+    lv_obj_t *button_save_setup;
+    lv_obj_t *button_back_setup;
 } objects_t;
 
 extern objects_t objects;
 
 void create_screen_main();
 void tick_screen_main();
+
+void create_screen_setup();
+void tick_screen_setup();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);
