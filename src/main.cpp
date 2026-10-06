@@ -96,7 +96,7 @@ void setup() {
   lv_display_t * disp;
   // Initialize the TFT display using the TFT_eSPI library
   disp = lv_tft_espi_create(SCREEN_WIDTH, SCREEN_HEIGHT, draw_buf, sizeof(draw_buf));
-  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_270);
+  lv_display_set_rotation(disp, LV_DISPLAY_ROTATION_90);
     
   // Initialize an LVGL input device object (Touchscreen)
   lv_indev_t * indev = lv_indev_create();
@@ -112,12 +112,28 @@ void setup() {
   }
   enableIndicator(false);
   nvs_inicializar();
+  setMaxADCvalue(constrain((configActual.integracionCiclos + 1) * 1024 - 1, 0, 65535)); // Update the max ADC value based on the new integration time
+  initUIObjectArrays();
+
+  const csv::Result csvResult = csv::begin();
+  Serial.printf("[CSV] Init: %s\n", csv::resultMessage(csvResult));
+  if (csvResult == csv::Result::MountFailed) {
+    Serial.println("[CSV] Prepare the LittleFS image with PlatformIO uploadfs before logging.");
+  }
+  Serial.println("[SERIAL] Command: csv (stop LIVE first, then send Enter).");
 }
 
 void loop() {
-  Runtime();
-  ui_tick();
-  lv_task_handler();  // let the GUI do its work
-  lv_tick_inc(5);     // tell LVGL how much time has passed
-  delay(5);           // let this time pass
+    static uint32_t previousTick = millis();
+
+    uint32_t now = millis();
+    lv_tick_inc(now - previousTick);
+    previousTick = now;
+
+    Runtime();
+    processSerialCommands();
+    ui_tick();
+    lv_task_handler();
+
+    delay(5);
 }

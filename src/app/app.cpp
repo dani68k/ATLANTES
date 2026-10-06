@@ -3,120 +3,206 @@
 #include "sensor/sensor.h"
 #include <lvgl.h>
 #include "ui/screens.h"
+#include "ui/actions.h"
 #include "nvs_manager/nvs_manager.h"
 
 bool liveState = false;
+bool measureamentInProgress = false;
+bool firstMeasureament = false;
+
+static constexpr unsigned long MEASUREMENT_TIMEOUT_MS = 5000;
 
 #define MAX_INTENSITY 65535.00
+#define TOLERANCE 1.0 
+
+uint16_t rawData[18];
+float calibratedData[18];
+uint16_t previousRawData[18] = {0};
+
+static csv::Record latestCsvRecord;
+static bool latestCsvRecordAvailable = false;
+
+bool copyLatestCsvRecord(csv::Record& record) {
+    if (!latestCsvRecordAvailable) return false;
+    record = latestCsvRecord;
+    return true;
+}
+
+lv_obj_t *array_bars[18] ;
+lv_obj_t *array_labels[18];
+int longitudesOnda[18] = {410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940};
+
+void initUIObjectArrays() {
+    array_bars[0] = objects.bar_410;
+    array_bars[1] = objects.bar_435;
+    array_bars[2] = objects.bar_460;
+    array_bars[3] = objects.bar_485;
+    array_bars[4] = objects.bar_510;
+    array_bars[5] = objects.bar_535;
+    array_bars[6] = objects.bar_560;
+    array_bars[7] = objects.bar_585;
+    array_bars[8] = objects.bar_610;
+    array_bars[9] = objects.bar_645;
+    array_bars[10] = objects.bar_680;
+    array_bars[11] = objects.bar_705;
+    array_bars[12] = objects.bar_730;
+    array_bars[13] = objects.bar_760;
+    array_bars[14] = objects.bar_810;
+    array_bars[15] = objects.bar_860;
+    array_bars[16] = objects.bar_900;
+    array_bars[17] = objects.bar_940;
+
+    array_labels[0] = objects.label_x_1;
+    array_labels[1] = objects.label_x_2;
+    array_labels[2] = objects.label_x_3;
+    array_labels[3] = objects.label_x_4;
+    array_labels[4] = objects.label_x_5;
+    array_labels[5] = objects.label_x_6;
+    array_labels[6] = objects.label_x_7;
+    array_labels[7] = objects.label_x_8;
+    array_labels[8] = objects.label_x_9;
+    array_labels[9] = objects.label_x_10;
+    array_labels[10] = objects.label_x_11;
+    array_labels[11] = objects.label_x_12;
+    array_labels[12] = objects.label_x_13;
+    array_labels[13] = objects.label_x_14;
+    array_labels[14] = objects.label_x_15;
+    array_labels[15] = objects.label_x_16;
+    array_labels[16] = objects.label_x_17;
+    array_labels[17] = objects.label_x_18;
+
+    // Keep runtime keyboard settings outside the EEZ-generated screen files.
+    lv_textarea_set_one_line(objects.textarea_keyboard, true);
+    lv_textarea_set_max_length(objects.textarea_keyboard, csv::MAX_LABEL_BYTES);
+    lv_textarea_set_placeholder_text(objects.textarea_keyboard, "Sample comment");
+    lv_obj_add_event_cb(objects.keyboard_keyboard, action_keyboard_ready,
+                        LV_EVENT_CANCEL, nullptr);
+
+}
+
+struct SpectrumAnalysis {
+    uint16_t maxRaw = 0;
+    float maxCalibrated = 0.0f;
+    int calibratedMaxIndex = -1; // No positive calibrated maximum found.
+};
+
+static SpectrumAnalysis analyzeSpectrum() {
+    SpectrumAnalysis analysis;
+    for (int i = 0; i < 18; i++) {
+        if (rawData[i] > analysis.maxRaw) {
+            analysis.maxRaw = rawData[i];
+        }
+        if (calibratedData[i] > analysis.maxCalibrated) {
+            analysis.maxCalibrated = calibratedData[i];
+            analysis.calibratedMaxIndex = i;
+        }
+    }
+    return analysis;
+}
+
+static void updateSpectrumUI(const SpectrumAnalysis& analysis) {
+    uint16_t maxADCvalue = getMaxADCvalue();
+    Serial.println("Max ADC value: " + String(maxADCvalue));
+    // Update the bars if any value has changed
+    for(int i = 0; i < 18; i++) {
+        uint32_t barValue = map(rawData[i], 0, maxADCvalue, 0, 100);
+        if (rawData[i] > previousRawData[i] * (1.0 + TOLERANCE / 100.0) || rawData[i] < previousRawData[i] * (1.0 - TOLERANCE / 100.0)) {
+            lv_bar_set_value(array_bars[i], barValue, LV_ANIM_ON);
+            previousRawData[i] = rawData[i]; // Update the previous value for the next comparison
+        }
+        if (barValue >= 99) { // SATURATION
+            lv_obj_set_style_text_color(array_labels[i], lv_color_hex(0xFF0000), LV_PART_MAIN); // ROJO
+        } else if (barValue >= 90 && barValue < 99) { // WARNING
+            lv_obj_set_style_text_color(array_labels[i], lv_color_hex(0xFF8000), LV_PART_MAIN); // NARANJA
+        } else if (rawData[i] == analysis.maxRaw) {
+            lv_obj_set_style_text_color(array_labels[i], lv_color_hex(0x00FF5E), LV_PART_MAIN); // VERD
+        } else { // NORMAL READING
+            lv_obj_set_style_text_color(array_labels[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN); // BLANCO
+        }
+
+
+
+    }
+
+    char buffer_label_indicator[60] = "Not data read yet\rMAX: NA";
+    if (analysis.calibratedMaxIndex >= 0) {
+        const int i = analysis.calibratedMaxIndex;
+        if (analysis.maxCalibrated >= 65535.00) {
+            snprintf(buffer_label_indicator, sizeof(buffer_label_indicator),
+                     "CH%d - λ = %dnm\rSATURATED:", i + 1, longitudesOnda[i]);
+        } else {
+            snprintf(buffer_label_indicator, sizeof(buffer_label_indicator),
+                     "CH%d - λ = %dnm\rMAX: %.2f", i + 1, longitudesOnda[i],
+                     analysis.maxCalibrated);
+        }
+    }
+    lv_label_set_text(objects.label_max_indicator, buffer_label_indicator);
+}
 
 void Runtime() {
-  static unsigned long lastTime = 0;
-  unsigned long currentTime = millis();
+    static unsigned long lastTime = 0;
+    unsigned long currentTime = millis();
 
-  // 1. CONTROL DE DISPARO DINÁMICO (Usa el tiempo real del SETUP)
-  if (!liveState) {
-    lv_obj_remove_flag(objects.setup_icon, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(objects.label_info_test, LV_OBJ_FLAG_HIDDEN);
-    return; // Si no está activo el modo live, salimos de inmediato
-  }
-  
-  lv_obj_add_flag(objects.setup_icon, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_remove_flag(objects.label_info_test, LV_OBJ_FLAG_HIDDEN);
-  // Compara contra el parámetro guardado en tu estructura modular NVS
-  if (currentTime - lastTime >= configActual.tiempoEntreTomasMS) { 
-    lastTime = currentTime; // Reiniciamos el cronómetro en el instante del disparo
-    if (!isDataReady()) {
-      // Disparamos la lectura física. La función startMeasurements() aplica
-      // configActual.ganancia y configActual.integracionCiclos internamente antes de ordenar ONE_SHOT
-      startMeasurements();
-    } 
-  }  
+    // 1. CONTROL DE DISPARO DINÁMICO (Usa el tiempo real del SETUP)
+    if (!liveState && !measureamentInProgress) {
+        lv_obj_remove_flag(objects.setup_icon, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(objects.setup_icon, LV_OBJ_FLAG_HIDDEN);
+    }
+    // Compara contra el parámetro guardado en tu estructura modular NVS
+    if (liveState && !measureamentInProgress &&
+    (firstMeasureament || currentTime - lastTime >= configActual.tiempoEntreTomasMS)) {
+			if (firstMeasureament) {
+                latestCsvRecordAvailable = false;
+				for (int i = 0; i < 18; i++) {
+					previousRawData[i] = 0;
+					lv_bar_set_value(array_bars[i], 0, LV_ANIM_OFF);//claer values of all bars
+			    }
+			}
+            startMeasurements();
+			measureamentInProgress = true;
+			firstMeasureament = false;
+			lastTime = millis();
+    }  
 
-  // 2. PROCESAMIENTO CUANDO EL POLLING DE DATOS ESTÁ LISTO
-  if (isDataReady()) {
-    
-    // Arrays locales para almacenar los datos de esta toma atómica
-    float rawData[18];
-    byte mappedValues[18];
-
-    // --- FASE A: Absorción limpia de datos I2C (Una sola lectura por canal) ---
-    rawData[0]  = getDataChannel1();  mappedValues[0]  = mapFloatToByte(rawData[0],  MAX_INTENSITY);
-    rawData[1]  = getDataChannel2();  mappedValues[1]  = mapFloatToByte(rawData[1],  MAX_INTENSITY);
-    rawData[2]  = getDataChannel3();  mappedValues[2]  = mapFloatToByte(rawData[2],  MAX_INTENSITY);
-    rawData[3]  = getDataChannel4();  mappedValues[3]  = mapFloatToByte(rawData[3],  MAX_INTENSITY);
-    rawData[4]  = getDataChannel5();  mappedValues[4]  = mapFloatToByte(rawData[4],  MAX_INTENSITY);
-    rawData[5]  = getDataChannel6();  mappedValues[5]  = mapFloatToByte(rawData[5],  MAX_INTENSITY);
-    rawData[6]  = getDataChannel7();  mappedValues[6]  = mapFloatToByte(rawData[6],  MAX_INTENSITY);
-    rawData[7]  = getDataChannel8();  mappedValues[7]  = mapFloatToByte(rawData[7],  MAX_INTENSITY);
-    rawData[8]  = getDataChannel9();  mappedValues[8]  = mapFloatToByte(rawData[8],  MAX_INTENSITY);
-    rawData[9]  = getDataChannel10(); mappedValues[9]  = mapFloatToByte(rawData[9],  MAX_INTENSITY);
-    rawData[10] = getDataChannel11(); mappedValues[10] = mapFloatToByte(rawData[10], MAX_INTENSITY);
-    rawData[11] = getDataChannel12(); mappedValues[11] = mapFloatToByte(rawData[11], MAX_INTENSITY);
-    rawData[12] = getDataChannel13(); mappedValues[12] = mapFloatToByte(rawData[12], MAX_INTENSITY);
-    rawData[13] = getDataChannel14(); mappedValues[13] = mapFloatToByte(rawData[13], MAX_INTENSITY);
-    rawData[14] = getDataChannel15(); mappedValues[14] = mapFloatToByte(rawData[14], MAX_INTENSITY);
-    rawData[15] = getDataChannel16(); mappedValues[15] = mapFloatToByte(rawData[15], MAX_INTENSITY);
-    rawData[16] = getDataChannel17(); mappedValues[16] = mapFloatToByte(rawData[16], MAX_INTENSITY);
-    rawData[17] = getDataChannel18(); mappedValues[17] = mapFloatToByte(rawData[17], MAX_INTENSITY);
-
-    // --- FASE B: Actualización inmediata de los gráficos del Histograma ---
-    lv_bar_set_value(objects.bar_410, mappedValues[0],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_435, mappedValues[1],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_460, mappedValues[2],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_485, mappedValues[3],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_510, mappedValues[4],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_535, mappedValues[5],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_560, mappedValues[6],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_585, mappedValues[7],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_610, mappedValues[8],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_645, mappedValues[9],  LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_680, mappedValues[10], LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_705, mappedValues[11], LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_730, mappedValues[12], LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_760, mappedValues[13], LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_810, mappedValues[14], LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_860, mappedValues[15], LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_900, mappedValues[16], LV_ANIM_ON);
-    lv_bar_set_value(objects.bar_940, mappedValues[17], LV_ANIM_ON);
-
-    // --- FASE C: Determinar el Pico Máximo Espectral ---
-    byte max_val = 0;
-    for(int i = 0; i < 18; i++) {        
-        if(mappedValues[i] > max_val) {
-            max_val = mappedValues[i];
-        }
+    if (measureamentInProgress &&
+        millis() - lastTime >= MEASUREMENT_TIMEOUT_MS) {
+        measureamentInProgress = false;
+        liveState = false;
+        firstMeasureament = false;
+        lv_obj_set_style_bg_color(objects.button_live_main, lv_color_hex(0x108CF0), LV_PART_MAIN);
+        lv_obj_set_style_text_color(objects.button_live_main, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+        lv_obj_remove_flag(objects.setup_icon, LV_OBJ_FLAG_HIDDEN);
+        Serial.println("[SENSOR] Measurement timeout (5000 ms). LIVE stopped.");
+        return;
     }
 
-    // --- FASE D: Evaluación lógica simétrica de alertas y colores por canal ---
-    char buffer[100];
-    lv_label_set_text(objects.label_max_indicator, "NA");
-    
-    // Definimos punteros para simplificar la evaluación en bloques repetitivos de tus 18 canales
-    lv_obj_t* labels_x[18] = {objects.label_x_1, objects.label_x_2, objects.label_x_3, objects.label_x_4,
-                              objects.label_x_5, objects.label_x_6, objects.label_x_7, objects.label_x_8,
-                              objects.label_x_9, objects.label_x_10, objects.label_x_11, objects.label_x_12,
-                              objects.label_x_13, objects.label_x_14, objects.label_x_15, objects.label_x_16,
-                              objects.label_x_17, objects.label_x_18};
-    int longitudesOnda[18] = {410, 435, 460, 490, 520, 550, 580, 610, 640, 670, 700, 730, 760, 790, 820, 850, 880, 910};
+    if (measureamentInProgress && isDataReady()) {        
+        // raw data 
+        uint32_t timestamp = millis();
+        readRawChannels(rawData);
+        uint32_t elapsed = millis() - timestamp;
+        Serial.printf("[SENSOR] Data read in %lu ms\n", elapsed);
 
-    // Procesamos los primeros 4 canales que pasaste en tu ejemplo
-    for(int i = 0; i < 18; i++) {
-        float intensity = (float)mappedValues[i] / 100.0f;
+        // Read calibrated channels before calculating or displaying the sample.
+        timestamp = millis();
+        readCalibratedChannels(calibratedData);
+        elapsed = millis() - timestamp;
+        Serial.printf("[SENSOR] Calibrated data read in %lu ms\n", elapsed);
 
-        // Condición 1: SATURACIÓN CRÍTICA (Física o porcentual > 100%)
-        if (intensity > 1.0f) {
-            lv_obj_set_style_text_color(labels_x[i], lv_color_hex(0xFF0000), LV_PART_MAIN); // ROJO
+        // Publish only after both sets of channels have been collected.
+        ++latestCsvRecord.sampleId;
+        latestCsvRecord.timestampMs = lastTime;
+        for (uint8_t i = 0; i < csv::CHANNEL_COUNT; ++i) {
+            latestCsvRecord.calibrated[i] = calibratedData[i];
         }
-        // Condición 2: ES EL PICO MÁXIMO VÁLIDO
-        else if (mappedValues[i] == max_val && intensity >= 0.01f) {
-            snprintf(buffer, sizeof(buffer), "CH%d - λ = %dnm - I = %.2f\r\nRaw value = %.1f", i+1, longitudesOnda[i], intensity, rawData[i]);
-            lv_label_set_text(objects.label_max_indicator, buffer);
-            lv_obj_set_style_text_color(labels_x[i], lv_color_hex(0xFF8000), LV_PART_MAIN); // NARANJA CORPORATIVO DE 6 DÍGITOS
-        }
-        // Condición 3: LECTURA NORMAL O SEÑAL DÉBIL
-        else {
-            lv_obj_set_style_text_color(labels_x[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN); // BLANCO
-        }
+        latestCsvRecordAvailable = true;
+
+        const SpectrumAnalysis analysis = analyzeSpectrum();
+        Serial.println("Max raw value: " + String(analysis.maxRaw));
+        Serial.println("Max value: " + String(analysis.maxCalibrated, 2));
+        updateSpectrumUI(analysis);
+
+        measureamentInProgress = false; // Reset the flag after processing the data    
     }
-  }
 }

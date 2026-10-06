@@ -13,12 +13,14 @@ enum ScreensEnum {
     _SCREEN_ID_FIRST = 1,
     SCREEN_ID_MAIN = 1,
     SCREEN_ID_SETUP = 2,
-    _SCREEN_ID_LAST = 2
+    SCREEN_ID_KEYBOARD = 3,
+    _SCREEN_ID_LAST = 3
 };
 
 typedef struct _objects_t {
     lv_obj_t *main;
     lv_obj_t *setup;
+    lv_obj_t *keyboard;
     lv_obj_t *label_max_indicator;
     lv_obj_t *obj0;
     lv_obj_t *eje_y;
@@ -49,8 +51,8 @@ typedef struct _objects_t {
     lv_obj_t *bar_760;
     lv_obj_t *bar_810;
     lv_obj_t *bar_860;
-    lv_obj_t *bar_940;
     lv_obj_t *bar_900;
+    lv_obj_t *bar_940;
     lv_obj_t *label_x_1;
     lv_obj_t *label_x_2;
     lv_obj_t *label_x_3;
@@ -81,7 +83,6 @@ typedef struct _objects_t {
     lv_obj_t *button_live_main;
     lv_obj_t *button_led_main;
     lv_obj_t *setup_icon;
-    lv_obj_t *label_info_test;
     lv_obj_t *obj3;
     lv_obj_t *panel_leds;
     lv_obj_t *obj4;
@@ -101,6 +102,9 @@ typedef struct _objects_t {
     lv_obj_t *slide_measure;
     lv_obj_t *button_save_setup;
     lv_obj_t *button_back_setup;
+    lv_obj_t *label_switch_setup;
+    lv_obj_t *keyboard_keyboard;
+    lv_obj_t *textarea_keyboard;
 } objects_t;
 
 extern objects_t objects;
@@ -110,6 +114,9 @@ void tick_screen_main();
 
 void create_screen_setup();
 void tick_screen_setup();
+
+void create_screen_keyboard();
+void tick_screen_keyboard();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);

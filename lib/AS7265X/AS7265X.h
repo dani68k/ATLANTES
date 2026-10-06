@@ -75,7 +75,7 @@
 
 //Settings
 
-#define AS7265X_POLLING_DELAY 5 //Amount of ms to wait between checking for virtual register changes
+#define AS7265X_POLLING_DELAY 1 //Amount of ms to wait between checking for virtual register changes
 
 #define AS72651_NIR 0x00
 #define AS72652_VISIBLE 0x01

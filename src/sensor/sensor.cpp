@@ -6,6 +6,17 @@
 
 static AS7265X sensor;
 
+
+uint16_t maxADCvalue;
+
+void setMaxADCvalue(uint16_t value) {
+    maxADCvalue = value;
+}
+
+uint16_t getMaxADCvalue() {
+    return maxADCvalue;
+}
+
 bool sensorInit(int sda, int scl) {
     if (!Wire.begin(sda, scl, 400000)) {
         return false;
@@ -16,11 +27,54 @@ bool sensorInit(int sda, int scl) {
 void startMeasurements() {
     sensor.setIntegrationCycles(configActual.integracionCiclos);
     sensor.setGain(configActual.ganancia);
+    // Runtime() polls for completion so the UI can run during integration.
     sensor.setMeasurementMode(AS7265X_MEASUREMENT_MODE_6CHAN_ONE_SHOT);
 }
 
 bool isDataReady() {
     return sensor.dataAvailable();
+}
+
+void readRawChannels(uint16_t* values) {
+    values[0] = getRawChannel1();
+    values[1] = getRawChannel2();
+    values[2] = getRawChannel3();
+    values[3] = getRawChannel4();
+    values[4] = getRawChannel5();
+    values[5] = getRawChannel6();
+    values[6] = getRawChannel7();
+    values[7] = getRawChannel8();
+    values[8] = getRawChannel9();
+    values[9] = getRawChannel10();
+    values[10] = getRawChannel11();
+    values[11] = getRawChannel12();
+    values[12] = getRawChannel13();
+    values[13] = getRawChannel14();
+    values[14] = getRawChannel15();
+    values[15] = getRawChannel16();
+    values[16] = getRawChannel17();
+    values[17] = getRawChannel18();
+}
+
+void readCalibratedChannels(float* values) {
+    values[0] = getCalibratedChannel1();
+    values[1] = getCalibratedChannel2();
+    values[2] = getCalibratedChannel3();
+    values[3] = getCalibratedChannel4();
+    values[4] = getCalibratedChannel5();
+    values[5] = getCalibratedChannel6();
+    values[6] = getCalibratedChannel7();
+    values[7] = getCalibratedChannel8();
+    values[8] = getCalibratedChannel9();
+    values[9] = getCalibratedChannel10();
+    values[10] = getCalibratedChannel11();
+    values[11] = getCalibratedChannel12();
+    values[12] = getCalibratedChannel13();
+    values[13] = getCalibratedChannel14();
+    values[14] = getCalibratedChannel15();
+    values[15] = getCalibratedChannel16();
+    values[16] = getCalibratedChannel17();
+    values[17] = getCalibratedChannel18();
 }
 
 void showRawData(bool print) {
@@ -77,76 +131,148 @@ void enableIndicator(bool state) {
   }
 }
 
-float getDataChannel1(){
-    return sensor.getCalibratedA();
+uint16_t getRawChannel1(){
+    return sensor.getA();//410nm
 }
 
-float getDataChannel2(){
-    return sensor.getCalibratedB();
+uint16_t getRawChannel2(){
+    return sensor.getB();//435nm
 }
 
-float getDataChannel3(){
-    return sensor.getCalibratedC();
+uint16_t getRawChannel3(){
+    return sensor.getC();//460nm
 }
 
-float getDataChannel4(){
-    return sensor.getCalibratedD();
+uint16_t getRawChannel4(){
+    return sensor.getD();//485nm
 }
 
-float getDataChannel5(){
-    return sensor.getCalibratedE();
+uint16_t getRawChannel5(){
+    return sensor.getE();//510nm
 }
 
-float getDataChannel6(){
-    return sensor.getCalibratedF();
+uint16_t getRawChannel6(){
+    return sensor.getF();//535nm
 }
 
-float getDataChannel7(){
-    return sensor.getCalibratedG();
+uint16_t getRawChannel7(){
+    return sensor.getG();//560nm
 }
 
-float getDataChannel8(){
-    return sensor.getCalibratedH();
+uint16_t getRawChannel8(){
+    return sensor.getH();//585nm
 }
 
-float getDataChannel9(){
-    return sensor.getCalibratedR();
+uint16_t getRawChannel9(){
+    return sensor.getR();//610nm
 }
 
-float getDataChannel10(){
-    return sensor.getCalibratedI();
+uint16_t getRawChannel10(){
+    return sensor.getI();//645nm
 }
 
-float getDataChannel11(){
-    return sensor.getCalibratedS();
+uint16_t getRawChannel11(){
+    return sensor.getS();//680nm
 }
 
-float getDataChannel12(){
-    return sensor.getCalibratedJ();
+uint16_t getRawChannel12(){
+    return sensor.getJ();//705nm
 }
 
-float getDataChannel13(){
-    return sensor.getCalibratedT();
+uint16_t getRawChannel13(){
+    return sensor.getT();//730nm
 }
 
-float getDataChannel14(){
-    return sensor.getCalibratedU();
+uint16_t getRawChannel14(){
+    return sensor.getU();//760nm
 }
 
-float getDataChannel15(){
-    return sensor.getCalibratedV();
+uint16_t getRawChannel15(){
+    return sensor.getV();//810nm
 }
 
-float getDataChannel16(){
-    return sensor.getCalibratedW();
+uint16_t getRawChannel16(){
+    return sensor.getW();//860nm
 }
 
-float getDataChannel17(){
-    return sensor.getCalibratedK();
+uint16_t getRawChannel17(){
+    return sensor.getK();//900nm
 }
 
-float getDataChannel18(){
-    return sensor.getCalibratedL();
+uint16_t getRawChannel18(){
+    return sensor.getL();//940nm
+}
+
+float getCalibratedChannel1(){
+    return sensor.getCalibratedA();//410nm
+}
+
+float getCalibratedChannel2(){
+    return sensor.getCalibratedB();//435nm
+}
+
+float getCalibratedChannel3(){
+    return sensor.getCalibratedC();//460nm
+}
+
+float getCalibratedChannel4(){
+    return sensor.getCalibratedD();//485nm
+}
+
+float getCalibratedChannel5(){
+    return sensor.getCalibratedE();//510nm
+}
+
+float getCalibratedChannel6(){
+    return sensor.getCalibratedF();//535nm
+}
+
+float getCalibratedChannel7(){
+    return sensor.getCalibratedG();//560nm
+}
+
+float getCalibratedChannel8(){
+    return sensor.getCalibratedH();//585nm
+}
+
+float getCalibratedChannel9(){
+    return sensor.getCalibratedR();//610nm
+}
+
+float getCalibratedChannel10(){
+    return sensor.getCalibratedI();//645nm
+}
+
+float getCalibratedChannel11(){
+    return sensor.getCalibratedS();//680nm
+}
+
+float getCalibratedChannel12(){
+    return sensor.getCalibratedJ();//705nm
+}
+
+float getCalibratedChannel13(){
+    return sensor.getCalibratedT();//730nm
+}
+
+float getCalibratedChannel14(){
+    return sensor.getCalibratedU();//760nm
+}
+
+float getCalibratedChannel15(){
+    return sensor.getCalibratedV();//810nm
+}
+
+float getCalibratedChannel16(){
+    return sensor.getCalibratedW();//860nm
+}
+
+float getCalibratedChannel17(){
+    return sensor.getCalibratedK();//900nm
+}
+
+float getCalibratedChannel18(){
+    return sensor.getCalibratedL();//940nm
 }
 
 byte mapFloatToByte(float x, float in_max) {
@@ -171,4 +297,25 @@ void setWhiteLEDCurrent(int current) {
 
 void resetWhiteLEDCurrent() {
   sensor.disableBulb(AS7265x_LED_WHITE);
+}
+
+void setIRLEDCurrent(int current) {
+  if (current == 1) sensor.setBulbCurrent(AS7265X_LED_CURRENT_LIMIT_12_5MA, AS7265x_LED_IR);
+  else if (current == 2) sensor.setBulbCurrent(AS7265X_LED_CURRENT_LIMIT_25MA, AS7265x_LED_IR);
+  else if (current == 3) sensor.setBulbCurrent(AS7265X_LED_CURRENT_LIMIT_50MA, AS7265x_LED_IR);
+  sensor.enableBulb(AS7265x_LED_IR);
+}
+
+void resetIRLEDCurrent() {
+  sensor.disableBulb(AS7265x_LED_IR);
+}
+
+void setUVLEDCurrent(int current) {
+  if (current == 1) sensor.setBulbCurrent(AS7265X_LED_CURRENT_LIMIT_12_5MA, AS7265x_LED_UV);
+  else if (current == 2) sensor.setBulbCurrent(AS7265X_LED_CURRENT_LIMIT_25MA, AS7265x_LED_UV);
+  sensor.enableBulb(AS7265x_LED_UV);
+}
+
+void resetUVLEDCurrent() {
+  sensor.disableBulb(AS7265x_LED_UV);
 }

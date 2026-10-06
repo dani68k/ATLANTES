@@ -16,6 +16,7 @@
     "ui_font_montserrat_extra_bold_12.c",
     "ui_image_logo_signal.c",
     "ui_image_setup.c",
+    "ui_image_setup_2.c",
     "vars.h"
   ]
 }

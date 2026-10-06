@@ -10,7 +10,7 @@ struct ConfiguracionSetup {
   uint8_t currentUV;           // 0 a 1 (12.5mA a 25mA)
   uint8_t integracionCiclos;   // 1 a 54 (Máx ~302.4ms)
   uint8_t ganancia;            // Constantes de la librería (1X, 3.7X, 16X, 64X)
-  uint32_t tiempoEntreTomasMS; // 500 a 5000 ms
+  uint32_t tiempoEntreTomasMS; // 1000ms a 10000 ms
 };
 
 // Declaramos la variable global como 'extern' para que sea visible en otros archivos .cpp

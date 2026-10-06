@@ -379,7 +379,8 @@ void AS7265X::setGain(uint8_t gain)
 //Time will be 2.8ms * [integration cycles + 1]
 void AS7265X::setIntegrationCycles(uint8_t cycleValue)
 {
-  maxWaitTime = (int)(cycleValue * 2.8 * 1.5) + 1; //Wait for integration time + 50%
+  // Allow at least 100 ms for virtual register communication, even at low integration settings.
+  maxWaitTime = max(100, (int)(cycleValue * 2.8 * 1.5) + 1);
   virtualWriteRegister(AS7265X_INTERGRATION_TIME, cycleValue); //Write
 }
 

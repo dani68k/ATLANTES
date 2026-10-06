@@ -19,6 +19,8 @@ extern void action_uv_roller_change(lv_event_t * e);
 extern void action_button_log_main(lv_event_t * e);
 extern void action_button_led_main(lv_event_t * e);
 extern void action_slide_gain_change(lv_event_t * e);
+extern void action_keyboard_ready(lv_event_t * e);
+extern void action_button_log(lv_event_t * e);
 
 #ifdef __cplusplus
 }
