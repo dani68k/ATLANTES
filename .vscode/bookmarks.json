@@ -9,6 +9,21 @@
 					"label": ""
 				}
 			]
+		},
+		{
+			"path": "src/ui/action.cpp",
+			"bookmarks": [
+				{
+					"line": 80,
+					"column": 35,
+					"label": ""
+				},
+				{
+					"line": 191,
+					"column": 26,
+					"label": ""
+				}
+			]
 		}
 	]
 }

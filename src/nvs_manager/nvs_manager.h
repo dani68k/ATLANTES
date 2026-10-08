@@ -11,6 +11,7 @@ struct ConfiguracionSetup {
   uint8_t integracionCiclos;   // 1 a 54 (Máx ~302.4ms)
   uint8_t ganancia;            // Constantes de la librería (1X, 3.7X, 16X, 64X)
   uint32_t tiempoEntreTomasMS; // 1000ms a 10000 ms
+  bool autoLEDs;                // true o false
 };
 
 // Declaramos la variable global como 'extern' para que sea visible en otros archivos .cpp

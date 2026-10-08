@@ -134,22 +134,78 @@ bool appendFormatted(char* line, size_t capacity, size_t& length,
     return true;
 }
 
-Result scanFile() {
-    File file = LittleFS.open(FILE_PATH, FILE_READ);
+Result scanFile(const char* path, uint16_t& count) {
+    File file = LittleFS.open(path, FILE_READ);
     if (!file) return Result::OpenFailed;
     if (file.isDirectory()) return Result::InvalidData;
+    count = 0;
     char line[LINE_CAPACITY];
     Result result = readLine(file, line, sizeof(line));
     if (result != Result::Ok) return result;
     if (strcmp(line, HEADER) != 0) return Result::InvalidData;
 
-    uint16_t count = 0;
     while (file.position() < file.size()) {
         result = readLine(file, line, sizeof(line));
         if (result != Result::Ok) return result;
         if (!validRow(line) || ++count > MAX_RECORDS) return Result::InvalidData;
     }
-    recordCount = count;
+    return Result::Ok;
+}
+
+Result rotateAndAppend(const char* newLine, size_t newLineLength) {
+    File source = LittleFS.open(FILE_PATH, FILE_READ);
+    if (!source) return Result::OpenFailed;
+    if (source.isDirectory()) return Result::InvalidData;
+    File temp = LittleFS.open(TEMP_PATH, FILE_WRITE);
+    if (!temp) return Result::OpenFailed;
+
+    bool written = temp.write(reinterpret_cast<const uint8_t*>(HEADER),
+                              sizeof(HEADER) - 1) == sizeof(HEADER) - 1 &&
+                   temp.write(static_cast<uint8_t>('\n')) == 1;
+    char row[LINE_CAPACITY];
+    Result result = readLine(source, row, sizeof(row));
+    if (result != Result::Ok || strcmp(row, HEADER) != 0) {
+        source.close();
+        temp.close();
+        return result == Result::Ok ? Result::InvalidData : result;
+    }
+
+    uint16_t copiedRows = 0;
+    result = readLine(source, row, sizeof(row));
+    if (result != Result::Ok || !validRow(row)) {
+        source.close();
+        temp.close();
+        return result == Result::Ok ? Result::InvalidData : result;
+    }
+    ++copiedRows; // Drop the oldest row.
+    while (source.position() < source.size()) {
+        result = readLine(source, row, sizeof(row));
+        if (result != Result::Ok || !validRow(row)) {
+            source.close();
+            temp.close();
+            return result == Result::Ok ? Result::InvalidData : result;
+        }
+        const size_t rowLength = strlen(row);
+        written = written &&
+                  temp.write(reinterpret_cast<const uint8_t*>(row), rowLength) == rowLength &&
+                  temp.write(static_cast<uint8_t>('\n')) == 1;
+        ++copiedRows;
+    }
+    source.close();
+    written = written &&
+              temp.write(reinterpret_cast<const uint8_t*>(newLine), newLineLength) ==
+                  newLineLength;
+    temp.flush();
+    temp.close();
+    if (!written) return Result::WriteFailed;
+    if (copiedRows != recordCount) return Result::InvalidData;
+
+    uint16_t tempCount = 0;
+    result = scanFile(TEMP_PATH, tempCount);
+    if (result != Result::Ok) return result;
+    if (tempCount != MAX_RECORDS) return Result::InvalidData;
+    if (!LittleFS.rename(TEMP_PATH, FILE_PATH)) return Result::RenameFailed;
+    recordCount = tempCount;
     return Result::Ok;
 }
 
@@ -187,14 +243,14 @@ Result begin() {
         const Result result = replaceWithHeader();
         if (result != Result::Ok) return result;
     }
-    const Result result = scanFile();
+    const Result result = scanFile(FILE_PATH, recordCount);
     ready = result == Result::Ok;
     return result;
 }
 
 Result append(const Record& record, const char* label) {
     if (!ready) return Result::NotInitialized;
-    if (recordCount >= MAX_RECORDS) return Result::Full;
+    if (recordCount > MAX_RECORDS) return Result::InvalidData;
     if (!label) return Result::InvalidRecord;
 
     size_t labelLength = 0;
@@ -228,9 +284,9 @@ Result append(const Record& record, const char* label) {
     }
     if (!appendFormatted(line, sizeof(line), length, "\",%s,%s,%s,%s,%.2f,%lu,%.2f",
                          record.whiteLed, record.uvLed, record.irLed, record.gain,
-                         record.integrationTimeMs,
-                         record.measureTime,
-                         record.temperature)) {
+                         static_cast<double>(record.integrationTimeMs),
+                         static_cast<unsigned long>(record.measureTime),
+                         static_cast<double>(record.temperature))) {
         return Result::InvalidRecord;
     }
     for (uint16_t value : record.raw) {
@@ -247,6 +303,10 @@ Result append(const Record& record, const char* label) {
     }
     if (length + 1 >= sizeof(line)) return Result::InvalidRecord;
     line[length++] = '\n';
+
+    if (recordCount == MAX_RECORDS) {
+        return rotateAndAppend(line, length);
+    }
 
     if (!LittleFS.exists(FILE_PATH)) {
         ready = false;
@@ -297,7 +357,9 @@ Result clear() {
     const Result result = replaceWithHeader();
     if (result != Result::Ok) return result;
     ready = false;
-    const Result scanned = scanFile();
+    uint16_t count = 0;
+    const Result scanned = scanFile(FILE_PATH, count);
+    if (scanned == Result::Ok) recordCount = count;
     ready = scanned == Result::Ok;
     return scanned;
 }

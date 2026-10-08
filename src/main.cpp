@@ -120,7 +120,6 @@ void setup() {
   if (csvResult == csv::Result::MountFailed) {
     Serial.println("[CSV] Prepare the LittleFS image with PlatformIO uploadfs before logging.");
   }
-  Serial.println("[SERIAL] Command: csv (stop LIVE first, then send Enter).");
 }
 
 void loop() {

@@ -4,20 +4,18 @@ Este módulo guarda espectros de 18 bandas calibradas en la flash del ESP32,
 utilizando LittleFS. La API está declarada en [csv.h](csv.h) y su implementación
 está en [csv.cpp](csv.cpp).
 
-Los ejemplos de este manual son para la futura integración. Actualmente el
-módulo no está conectado al botón LOG, al teclado ni a `Runtime()`.
+La adquisición publica las medidas y la pantalla LOG permite guardar una copia
+con una etiqueta. `csv::append()` conserva como máximo las últimas 100 medidas:
+al guardar la número 101, elimina la más antigua y añade la nueva al final.
 
-## 1. Estado actual y comportamiento previsto
+## 1. Comportamiento actual
 
-| Aspecto | Implementado actualmente | Propuesta pendiente de implementar |
-| --- | --- | --- |
-| Capacidad | 100 medidas más la cabecera | Mantener las últimas 100 medidas |
-| Orden | Cada medida se añade al final | Medida más reciente justo debajo de la cabecera |
-| Medida número 101 | Devuelve `csv::Result::Full` y conserva el archivo | Guarda la nueva y descarta la más antigua |
-| Operación de guardado | `csv::append()` | Adaptar la operación y valorar el nombre `save()` |
-
-**El guardado con rotación todavía no existe.** Los ejemplos siguientes usan
-la API disponible y no eliminan automáticamente medidas anteriores.
+| Aspecto | Comportamiento |
+| --- | --- |
+| Capacidad | 100 medidas más la cabecera |
+| Orden | De la más antigua a la más reciente |
+| Al llegar a 100 medidas | Elimina la más antigua y guarda la nueva |
+| Escritura cuando rota | Reconstruye y valida `/data.csv.tmp` antes de sustituir el CSV |
 
 ## 2. Ubicación del archivo
 
@@ -85,9 +83,8 @@ Sample_id,Label,White LED,UV LED,IR LED,Gain,Integration time,Measurement time,T
 Reglas del formato:
 
 - Separador de columnas: coma. Separador decimal: punto.
-- Integración, temperatura y valores calibrados se escriben con hasta 9 cifras
-  significativas (`%.9g`); pueden usar notación científica. Se rechazan
-  `NaN` e infinito.
+- La integración y temperatura se escriben con dos decimales; los calibrados,
+  con cuatro. Se rechazan `NaN` e infinito.
 - Las cadenas de configuración no pueden contener comas, comillas ni
   caracteres de control y deben caber en sus campos de `Record`.
 - Nombre de hasta 64 bytes; con texto UTF-8 no necesariamente son 64 caracteres.
@@ -112,7 +109,7 @@ Todas las funciones están en el espacio de nombres `csv`:
 | Función | Uso |
 | --- | --- |
 | `begin()` | Montar LittleFS, preparar o validar el CSV y recuperar el contador |
-| `append(record, label)` | Añadir una medida al final; devuelve `Full` si ya hay 100 |
+| `append(record, label)` | Añadir una medida; si hay 100, descartar la más antigua |
 | `getRecordCount(count)` | Consultar el contador; usar `count` solo si devuelve `Ok` |
 | `exportTo(output)` | Enviar el archivo completo, incluida la cabecera, a un objeto `Print` |
 | `clear()` | Borrar las medidas y dejar únicamente la cabecera |
@@ -162,48 +159,33 @@ La estructura que recibe el módulo es:
 
 ```cpp
 csv::Record record;
-// record.sampleId
-// record.timestampMs
-// record.calibrated[18]
+// Populate sampleId, whiteLed, uvLed, irLed, gain, integrationTimeMs,
+// measureTime, temperature, raw[18] and calibrated[18] from the acquisition.
 ```
 
-Esta función de ejemplo recibe una copia completa de los datos de adquisición:
+La etiqueta introducida en LOG se pasa por separado a `append()`:
 
 ```cpp
-csv::Result guardarMedida(uint32_t sampleId,
-                         uint32_t acquiredAtMs,
-                         const float (&values)[csv::CHANNEL_COUNT],
-                         const char* label) {
-    csv::Record record;
-    record.sampleId = sampleId;
-    record.timestampMs = acquiredAtMs;
-    for (uint8_t i = 0; i < csv::CHANNEL_COUNT; ++i) {
-        record.calibrated[i] = values[i];
-    }
+csv::Result guardarMedida(const csv::Record& record, const char* label) {
     return csv::append(record, label);
 }
 ```
 
 El llamador debe comprobar el resultado y mostrar éxito únicamente cuando sea
-`csv::Result::Ok`. Si devuelve `Full`, el archivo permanece igual: la rotación
-está pendiente de implementar.
+`csv::Result::Ok`. Al guardar con 100 registros, `append()` reconstruye el CSV
+con los 99 más recientes y el nuevo registro.
 
-El módulo no dispara medidas, no lee el sensor y no obtiene automáticamente
-`millis()`. Recibe los datos y su tiempo para que el registro corresponda a la
-adquisición elegida, no al instante posterior en que se termina de escribir el nombre.
+El módulo no dispara medidas ni lee el sensor. Recibe los datos de la adquisición
+y su período junto con la etiqueta elegida por el usuario.
 
-### Integración propuesta con LOG, todavía pendiente
+### Guardado desde LOG
 
-1. `Runtime()` termina de leer una muestra y la publica como disponible.
-2. Al pulsar LOG, se copia la última muestra completa a un registro pendiente.
-3. El teclado permite introducir su nombre.
-4. Al confirmar, se guarda la copia pendiente y se comprueba el resultado.
-5. Al cancelar, se descarta la copia pendiente sin escribir.
+Al pulsar LOG se copia la última muestra completa a un registro pendiente. El
+teclado permite introducir su etiqueta; al confirmar se guarda esa copia y al
+cancelar se descarta sin escribir. La copia evita que una adquisición nueva
+cambie los datos mientras se introduce la etiqueta.
 
-Si LIVE sigue activo durante la edición del nombre, la copia evita que el registro
-cambie con las nuevas adquisiciones. LOG debería estar deshabilitado hasta tener
-una muestra completa. Este flujo es una propuesta de integración; no se ha añadido
-a los eventos de la interfaz.
+LOG solo permite continuar cuando hay una muestra completa disponible.
 
 ## 8. Exportar el archivo
 
@@ -252,52 +234,44 @@ La cabecera se prepara en `/data.csv.tmp` antes de reemplazar `/data.csv`.
 | `RenameFailed` | No se pudo sustituir el CSV por el temporal |
 | `InvalidData` | Archivo incompatible, mal formado o incompleto; exportar antes de decidir si se borra |
 | `InvalidRecord` | Nombre, configuración u otro campo del registro no admitido |
-| `Full` | Ya hay 100 medidas; el guardado actual no elimina ninguna |
+| `Full` | Reservado; alcanzar el límite no impide guardar porque se elimina la fila más antigua |
 | `OutputFailed` | El destino no pudo recibir la exportación |
 
-Después de una escritura parcial se bloquean los siguientes `append()` para
-no añadir datos detrás de una fila incompleta. `begin()` vuelve a examinar el
-archivo; si la fila sigue incompleta, devuelve `InvalidData`. No hay reparación
-automática ni eliminación silenciosa de esa fila.
+Si falla una escritura directa antes de alcanzar la capacidad, se bloquean los
+siguientes `append()` para no añadir datos detrás de una fila incompleta.
+`begin()` vuelve a examinar el archivo; si la fila sigue incompleta, devuelve
+`InvalidData`. Si falla la escritura del temporal durante una rotación, el CSV
+original se conserva y sigue disponible. No hay reparación automática ni
+eliminación silenciosa de filas incompletas.
 
 La validación comprueba el formato, los límites de las cadenas y que los campos
 float sean finitos. No demuestra que la adquisición I²C haya sido correcta. La
-robustez ante cortes de alimentación
-debe comprobarse en hardware; escribir y cerrar un archivo no convierte toda la
-secuencia de guardado en una transacción de aplicación.
+robustez ante cortes de alimentación debe comprobarse en hardware; escribir y
+cerrar un archivo no convierte toda la secuencia de guardado en una transacción
+de aplicación.
 
-## 11. Rotación propuesta: últimos 100, más recientes arriba
+## 11. Rotación al alcanzar la capacidad
 
-El diseño comentado para la siguiente versión es:
+Cuando ya hay 100 medidas, `append()` escribe en `/data.csv.tmp` la cabecera,
+omite la primera (más antigua) fila, copia las otras 99 y añade la nueva fila.
+Valida el temporal completo y solo entonces lo renombra como `/data.csv`.
+El orden del archivo se mantiene de la medida más antigua a la más reciente.
 
-1. Escribir la cabecera en `/data.csv.tmp`.
-2. Escribir la nueva medida.
-3. Copiar como máximo las primeras 99 medidas del archivo anterior.
-4. Cerrar y validar el temporal.
-5. Sustituir `/data.csv` cuando el nuevo archivo esté completo.
-
-El archivo anterior deberá estar ya ordenado de más reciente a más antiguo.
-**La versión actual escribe en el orden contrario.** Antes de activar la rotación
-habrá que migrar el archivo existente o exportarlo y empezar uno nuevo; no se
-pueden copiar simplemente sus primeras 99 filas y asumir que son las más recientes.
-
-Escribir después de la cabecera sobrescribe bytes; no inserta espacio ni desplaza
-las filas. Por eso esta propuesta reconstruye el archivo en un temporal.
-Con la rotación, el contador quedará en 100 y dejará de devolverse `Full` como
-consecuencia normal de alcanzar la capacidad.
+Si falla la lectura, escritura, validación o sustitución, se devuelve el error
+y el CSV anterior no se sustituye. La rotación requiere espacio libre en LittleFS
+para crear temporalmente una segunda copia del archivo. Tras un reinicio, el
+contador se recupera mediante la validación de `begin()`.
 
 ## 12. Verificación
 
-El módulo se ha compilado con el firmware. Hay pruebas locales que compilan
-`csv.cpp` con sustitutos de Arduino y LittleFS en memoria:
+Compilar el firmware con PlatformIO desde la raíz del proyecto:
 
-- Capacidad de 100 medidas y rechazo de la siguiente.
-- Recuperación del contador al reinicializar.
-- Nombres con comas y comillas; valores finitos extremos.
-- Rechazo de datos inválidos y filas incompletas.
-- Fallos de apertura, lectura, escritura parcial, sustitución y exportación.
-- Borrado explícito y creación a partir de un archivo vacío.
+```powershell
+& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run -e esp32dev
+```
 
-Las instrucciones están en [test/csv_host/README.md](../../test/csv_host/README.md).
-Estas pruebas no sustituyen la validación del montaje, persistencia tras reinicio
-y comportamiento ante cortes de alimentación en el ESP32.
+La compilación no sustituye la validación en el ESP32. En hardware, comprobar
+la escritura de más de 100 medidas, que el archivo mantenga 100 registros y que
+el registro más antiguo desaparezca mientras el nuevo queda al final. Verificar
+también la persistencia después de reiniciar y el comportamiento si LittleFS no
+tiene espacio suficiente para construir el archivo temporal.

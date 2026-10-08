@@ -16,7 +16,6 @@ extern void action_button_save_setup(lv_event_t * e);
 extern void action_white_roller_change(lv_event_t * e);
 extern void action_ir_roller_change(lv_event_t * e);
 extern void action_uv_roller_change(lv_event_t * e);
-extern void action_button_log_main(lv_event_t * e);
 extern void action_button_led_main(lv_event_t * e);
 extern void action_slide_gain_change(lv_event_t * e);
 extern void action_keyboard_ready(lv_event_t * e);

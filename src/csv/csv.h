@@ -43,9 +43,9 @@ enum class Result : uint8_t {
 // A fresh device needs a LittleFS image or explicit formatting before begin().
 Result begin();
 
-// One calibrated spectrum per line. Label may contain commas/quotes, but no
-// control characters; at most MAX_LABEL_BYTES UTF-8 bytes. Reject NaN/Inf.
-// Write floats with 9 significant digits, decimal point and comma delimiter.
+// One spectrum per line. At capacity, discard the oldest row before saving.
+// Label may contain commas/quotes, but no control characters; at most
+// MAX_LABEL_BYTES UTF-8 bytes. Reject NaN/Inf.
 Result append(const Record& record, const char* label);
 
 // Count is usable only on Ok; it is recovered after reboot by begin().

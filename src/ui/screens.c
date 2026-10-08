@@ -816,7 +816,7 @@ void create_screen_main() {
             // button_log_main
             lv_obj_t *obj = lv_button_create(parent_obj);
             objects.button_log_main = obj;
-            lv_obj_set_pos(obj, 240, 200);
+            lv_obj_set_pos(obj, 240, 201);
             lv_obj_set_size(obj, 75, 30);
             lv_obj_add_event_cb(obj, action_button_log, LV_EVENT_PRESSED, (void *)0);
             lv_obj_add_event_cb(obj, action_button_log, LV_EVENT_RELEASED, (void *)0);
@@ -883,7 +883,7 @@ void create_screen_main() {
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_text_font(obj, &ui_font_montserrat_extra_bold_12, LV_PART_MAIN | LV_STATE_DEFAULT);
-                    lv_label_set_text_static(obj, "LIVE");
+                    lv_label_set_text_static(obj, "RUN");
                 }
             }
         }
