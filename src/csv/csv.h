@@ -34,6 +34,8 @@ enum class Result : uint8_t {
     RenameFailed,
     InvalidData,
     InvalidRecord,
+    RecordNotFound,
+    StaleRecord,
     Full,
     OutputFailed
 };
@@ -47,6 +49,9 @@ Result begin();
 // Label may contain commas/quotes, but no control characters; at most
 // MAX_LABEL_BYTES UTF-8 bytes. Reject NaN/Inf.
 Result append(const Record& record, const char* label);
+
+// Delete a 0-based row in oldest-first order if its sampleId still matches.
+Result deleteRecordAt(uint16_t rowIndex, uint32_t expectedSampleId);
 
 // Count is usable only on Ok; it is recovered after reboot by begin().
 Result getRecordCount(uint16_t& count);

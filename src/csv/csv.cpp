@@ -326,6 +326,104 @@ Result append(const Record& record, const char* label) {
     return Result::Ok;
 }
 
+Result deleteRecordAt(uint16_t rowIndex, uint32_t expectedSampleId) {
+    if (!ready) return Result::NotInitialized;
+    if (rowIndex >= recordCount) return Result::RecordNotFound;
+
+    File source = LittleFS.open(FILE_PATH, FILE_READ);
+    if (!source) return Result::OpenFailed;
+    if (source.isDirectory()) {
+        source.close();
+        return Result::InvalidData;
+    }
+    File temp = LittleFS.open(TEMP_PATH, FILE_WRITE);
+    if (!temp) {
+        source.close();
+        return Result::OpenFailed;
+    }
+
+    const auto cleanup = [&]() {
+        source.close();
+        temp.close();
+        LittleFS.remove(TEMP_PATH);
+    };
+
+    char line[LINE_CAPACITY];
+    Result result = readLine(source, line, sizeof(line));
+    if (result != Result::Ok || strcmp(line, HEADER) != 0) {
+        cleanup();
+        return result == Result::Ok ? Result::InvalidData : result;
+    }
+
+    const size_t headerLength = sizeof(HEADER) - 1;
+    bool written =
+        temp.write(reinterpret_cast<const uint8_t*>(HEADER), headerLength) ==
+            headerLength &&
+        temp.write(static_cast<uint8_t>('\n')) == 1;
+    if (!written) {
+        cleanup();
+        return Result::WriteFailed;
+    }
+
+    uint16_t currentIndex = 0;
+    bool removed = false;
+    while (source.position() < source.size()) {
+        result = readLine(source, line, sizeof(line));
+        if (result != Result::Ok || !validRow(line)) {
+            cleanup();
+            return result == Result::Ok ? Result::InvalidData : result;
+        }
+
+        if (currentIndex == rowIndex) {
+            char* end = nullptr;
+            const unsigned long sampleId = strtoul(line, &end, 10);
+            if (end == line || *end != ',' || sampleId != expectedSampleId) {
+                cleanup();
+                return Result::StaleRecord;
+            }
+            removed = true;
+        } else {
+            const size_t lineLength = strlen(line);
+            written =
+                temp.write(reinterpret_cast<const uint8_t*>(line), lineLength) ==
+                    lineLength &&
+                temp.write(static_cast<uint8_t>('\n')) == 1;
+            if (!written) {
+                cleanup();
+                return Result::WriteFailed;
+            }
+        }
+        ++currentIndex;
+    }
+
+    if (currentIndex != recordCount) {
+        cleanup();
+        return Result::InvalidData;
+    }
+    if (!removed) {
+        cleanup();
+        return Result::RecordNotFound;
+    }
+
+    temp.flush();
+    source.close();
+    temp.close();
+
+    uint16_t tempCount = 0;
+    result = scanFile(TEMP_PATH, tempCount);
+    if (result != Result::Ok || tempCount != recordCount - 1) {
+        LittleFS.remove(TEMP_PATH);
+        return result == Result::Ok ? Result::InvalidData : result;
+    }
+    if (!LittleFS.rename(TEMP_PATH, FILE_PATH)) {
+        LittleFS.remove(TEMP_PATH);
+        return Result::RenameFailed;
+    }
+
+    recordCount = tempCount;
+    return Result::Ok;
+}
+
 Result getRecordCount(uint16_t& count) {
     if (!ready) return Result::NotInitialized;
     count = recordCount;
@@ -375,6 +473,8 @@ const char* resultMessage(Result result) {
         case Result::RenameFailed: return "Cannot replace CSV file";
         case Result::InvalidData: return "Invalid or incomplete CSV file";
         case Result::InvalidRecord: return "Invalid CSV record";
+        case Result::RecordNotFound: return "CSV record not found";
+        case Result::StaleRecord: return "CSV record has changed";
         case Result::Full: return "CSV full (100 records)";
         case Result::OutputFailed: return "CSV export failed";
     }

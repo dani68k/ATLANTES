@@ -205,15 +205,6 @@
       "name": "uv_roller_change"
     },
     {
-      "objID": "a5300399-405f-44c8-98f1-34214b4dd1e3",
-      "components": [],
-      "connectionLines": [],
-      "localVariables": [],
-      "componentGroups": [],
-      "userProperties": [],
-      "name": "button_log_main"
-    },
-    {
       "objID": "62042537-73fc-46b1-8065-5ade3c83f783",
       "components": [],
       "connectionLines": [],

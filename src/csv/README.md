@@ -110,6 +110,7 @@ Todas las funciones están en el espacio de nombres `csv`:
 | --- | --- |
 | `begin()` | Montar LittleFS, preparar o validar el CSV y recuperar el contador |
 | `append(record, label)` | Añadir una medida; si hay 100, descartar la más antigua |
+| `deleteRecordAt(rowIndex, expectedSampleId)` | Borrar una fila por índice 0-based, solo si su `Sample_id` coincide |
 | `getRecordCount(count)` | Consultar el contador; usar `count` solo si devuelve `Ok` |
 | `exportTo(output)` | Enviar el archivo completo, incluida la cabecera, a un objeto `Print` |
 | `clear()` | Borrar las medidas y dejar únicamente la cabecera |
@@ -119,6 +120,12 @@ Las operaciones son síncronas. Deben ejecutarse desde la tarea principal,
 no desde una interrupción ni concurrentemente desde varias tareas. `append()`
 abre, escribe y cierra el archivo en cada guardado. `exportTo()` puede tardar
 según el tamaño del CSV y la velocidad de su destino.
+
+`deleteRecordAt()` cuenta las medidas en orden de archivo, de la más antigua a
+la más nueva, sin contar la cabecera. Verifica el índice y el `sampleId`
+esperado, escribe un archivo temporal validado y solo entonces reemplaza
+`/data.csv`. Devuelve `RecordNotFound` si el índice no existe y `StaleRecord`
+si el identificador ya no coincide.
 
 El módulo administra `/data.csv`; no modificar ese archivo por otra vía
 mientras se utiliza el contador en memoria. Si se reemplaza externamente,

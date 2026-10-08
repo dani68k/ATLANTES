@@ -157,22 +157,216 @@
       font-size: 1rem;
     }
 
+    .file-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
     .file-meta {
       margin: 5px 0 0;
       color: #91a3b2;
       font-size: 0.86rem;
     }
 
-    .preview {
+    .table-scroll {
       max-height: min(62vh, 680px);
-      min-height: 180px;
-      margin: 0;
       overflow: auto;
-      padding: 18px;
+    }
+
+    .csv-table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
       color: #d2e3ed;
-      font: 0.84rem/1.65 "Cascadia Code", "SFMono-Regular", Consolas, monospace;
-      tab-size: 2;
-      white-space: pre;
+      font: 0.82rem/1.4 "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      white-space: nowrap;
+    }
+
+    .csv-table th,
+    .csv-table td {
+      max-width: 280px;
+      overflow: hidden;
+      padding: 10px 12px;
+      border-bottom: 1px solid #293946;
+      text-align: left;
+      text-overflow: ellipsis;
+    }
+
+    .csv-table thead th {
+      position: sticky;
+      z-index: 1;
+      top: 0;
+      background: #202e3a;
+      color: #a9b8c6;
+      font: 700 0.72rem/1.4 Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .csv-table tbody tr {
+      cursor: pointer;
+    }
+
+    .csv-table tbody tr:hover {
+      background: #1c3038;
+    }
+
+    .csv-table tbody tr[aria-selected="true"] {
+      background: #17463f;
+      box-shadow: inset 3px 0 #70e0c6;
+    }
+
+    .csv-table .select-column {
+      position: sticky;
+      z-index: 2;
+      left: 0;
+      width: 62px;
+      min-width: 62px;
+      background: #15202b;
+      text-align: center;
+    }
+
+    .csv-table thead .select-column {
+      z-index: 3;
+      background: #202e3a;
+    }
+
+    .csv-table tr[aria-selected="true"] .select-column {
+      background: #17463f;
+    }
+
+    .csv-table input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #70e0c6;
+      cursor: pointer;
+    }
+
+    .spectrum-panel {
+      padding: 20px 18px;
+      border-top: 1px solid #293946;
+    }
+
+    .spectrum-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .spectrum-heading h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .spectrum-record {
+      margin: 6px 0 0;
+      color: #91a3b2;
+      font-size: 0.86rem;
+    }
+
+    .peak-summary {
+      color: #91a3b2;
+      text-align: right;
+    }
+
+    .peak-channel {
+      display: block;
+      margin-bottom: 4px;
+      color: #70e0c6;
+      font-weight: 700;
+    }
+
+    .peak-value {
+      color: #e7eef5;
+      font-size: 1.15rem;
+      font-weight: 750;
+    }
+
+    .spectrum-scroll {
+      overflow-x: auto;
+      border: 1px solid #293946;
+      border-radius: 12px;
+      background: #111c26;
+    }
+
+    .spectrum-chart {
+      display: grid;
+      grid-template-columns: repeat(18, minmax(42px, 1fr));
+      gap: 8px;
+      min-width: 900px;
+      height: 270px;
+      padding: 18px 14px 12px;
+    }
+
+    .spectrum-column {
+      display: grid;
+      grid-template-rows: 22px 1fr 22px;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .spectrum-raw-value,
+    .spectrum-wavelength {
+      overflow: hidden;
+      color: #91a3b2;
+      font: 0.7rem/22px "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .spectrum-bar-track {
+      display: flex;
+      height: 100%;
+      align-items: flex-end;
+      justify-content: center;
+      border-bottom: 1px solid #405362;
+      background: repeating-linear-gradient(
+        to top,
+        transparent 0,
+        transparent calc(20% - 1px),
+        rgb(128 124 124 / 55%) calc(20% - 1px),
+        rgb(128 124 124 / 55%) 20%
+      );
+    }
+
+    .spectrum-bar {
+      width: 68%;
+      border-radius: 5px 5px 0 0;
+    }
+
+    .spectrum-error {
+      margin: 0;
+      color: #ff9b9b;
+      line-height: 1.5;
+    }
+
+    .setup-values {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .setup-value {
+      padding: 12px;
+      border: 1px solid #293946;
+      border-radius: 10px;
+      background: #182631;
+    }
+
+    .setup-value dt {
+      margin-bottom: 5px;
+      color: #91a3b2;
+      font-size: 0.75rem;
+    }
+
+    .setup-value dd {
+      margin: 0;
+      color: #e7eef5;
+      font-weight: 700;
     }
 
     .empty {
@@ -240,9 +434,30 @@
           <h2 id="fileTitle">data.csv</h2>
           <p class="file-meta" id="fileMeta">No file received yet.</p>
         </div>
+        <div class="file-actions">
+          <button class="secondary" id="deleteRowButton" type="button" disabled>Delete selected row</button>
+        </div>
       </div>
-      <div class="empty" id="emptyState">Connect to the spectrometer and request its CSV to see all lines here.</div>
-      <pre class="preview" id="csvPreview" aria-label="CSV file contents" hidden></pre>
+      <div class="empty" id="emptyState">Connect to the spectrometer and request its CSV to see the records.</div>
+      <div class="table-scroll" id="csvTableContainer" hidden>
+        <table class="csv-table" id="csvTable" aria-label="CSV records"></table>
+      </div>
+      <section class="spectrum-panel" id="spectrumPanel" aria-labelledby="spectrumTitle" hidden>
+        <div class="spectrum-heading">
+          <div>
+            <h2 id="spectrumTitle">Selected spectrum</h2>
+            <p class="spectrum-record" id="spectrumRecord"></p>
+          </div>
+          <div class="peak-summary" id="peakSummary"></div>
+        </div>
+        <div id="spectrumContent">
+          <div class="spectrum-scroll">
+            <div class="spectrum-chart" id="spectrumChart" role="img" aria-label="Raw spectrum histogram"></div>
+          </div>
+          <dl class="setup-values" id="setupValues"></dl>
+        </div>
+        <p class="spectrum-error" id="spectrumError" role="alert" hidden></p>
+      </section>
     </section>
 
     <p class="instructions">Web Bluetooth needs a supported browser and a secure page origin. For local use, serve this folder from <code>localhost</code> (for example with VS Code Live Server). The device sends the file in BLE notifications; the page does not upload or change data on the spectrometer.</p>
@@ -257,15 +472,44 @@
     const DATA_UUID = "9c5e1002-7e5a-4f2d-9a91-30e52e7b1b01";
     const STATUS_UUID = "9c5e1003-7e5a-4f2d-9a91-30e52e7b1b01";
     const TRANSFER_TIMEOUT_MS = 120000;
+    const CHANNEL_COLORS = {
+      410: "#6a00ff",
+      435: "#4b00ff",
+      460: "#0055ff",
+      485: "#009aff",
+      510: "#00d4b0",
+      535: "#00c850",
+      560: "#58d000",
+      585: "#b8d000",
+      610: "#ffb000",
+      645: "#ff4a00",
+      680: "#e03000",
+      705: "#b02000",
+      730: "#7a1a00",
+      760: "#6e1608",
+      810: "#5a1018",
+      860: "#4a1028",
+      900: "#3a1634",
+      940: "#2c1e38"
+    };
 
     const connectButton = document.querySelector("#connectButton");
     const requestButton = document.querySelector("#requestButton");
     const downloadButton = document.querySelector("#downloadButton");
     const disconnectButton = document.querySelector("#disconnectButton");
+    const deleteRowButton = document.querySelector("#deleteRowButton");
     const statusElement = document.querySelector("#status");
     const fileMeta = document.querySelector("#fileMeta");
     const emptyState = document.querySelector("#emptyState");
-    const csvPreview = document.querySelector("#csvPreview");
+    const csvTableContainer = document.querySelector("#csvTableContainer");
+    const csvTable = document.querySelector("#csvTable");
+    const spectrumPanel = document.querySelector("#spectrumPanel");
+    const spectrumRecord = document.querySelector("#spectrumRecord");
+    const peakSummary = document.querySelector("#peakSummary");
+    const spectrumContent = document.querySelector("#spectrumContent");
+    const spectrumChart = document.querySelector("#spectrumChart");
+    const setupValues = document.querySelector("#setupValues");
+    const spectrumError = document.querySelector("#spectrumError");
 
     let device = null;
     let controlCharacteristic = null;
@@ -275,11 +519,36 @@
     let receivedBytes = 0;
     let transferTimer = null;
     let transferPending = false;
+    let deleteTimer = null;
+    let deletePending = false;
     let csvContents = null;
+    let selectedRecordIndex = null;
+    let selectedSampleId = null;
+    let csvHeaders = [];
+    let csvRecords = [];
 
     function setStatus(message, kind = "neutral") {
       statusElement.textContent = message;
       statusElement.dataset.kind = kind;
+    }
+
+    function updateActionButtons() {
+      const connected = Boolean(device?.gatt.connected && controlCharacteristic);
+      requestButton.disabled = !connected || transferPending || deletePending;
+      deleteRowButton.disabled = !connected || transferPending || deletePending ||
+        selectedRecordIndex === null || selectedSampleId === null;
+    }
+
+    function clearSelection() {
+      selectedRecordIndex = null;
+      selectedSampleId = null;
+      for (const row of csvTable.tBodies[0]?.rows ?? []) {
+        row.setAttribute("aria-selected", "false");
+        row.querySelector('input[type="radio"]').checked = false;
+      }
+      delete fileMeta.dataset.selectedRecord;
+      spectrumPanel.hidden = true;
+      updateActionButtons();
     }
 
     function clearTransfer() {
@@ -288,27 +557,322 @@
       transferChunks = [];
       receivedBytes = 0;
       transferPending = false;
+      updateActionButtons();
+    }
+
+    function parseCsv(text) {
+      if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+      const rows = [];
+      let row = [];
+      let field = "";
+      let quoted = false;
+      let quoteClosed = false;
+
+      for (let index = 0; index < text.length; index += 1) {
+        const character = text[index];
+        if (quoted) {
+          if (character === '"') {
+            if (text[index + 1] === '"') {
+              field += '"';
+              index += 1;
+            } else {
+              quoted = false;
+              quoteClosed = true;
+            }
+          } else {
+            field += character;
+          }
+          continue;
+        }
+
+        if (character === ",") {
+          row.push(field);
+          field = "";
+          quoteClosed = false;
+        } else if (character === "\n" || character === "\r") {
+          row.push(field);
+          rows.push(row);
+          row = [];
+          field = "";
+          quoteClosed = false;
+          if (character === "\r" && text[index + 1] === "\n") index += 1;
+        } else if (character === '"') {
+          if (field.length !== 0 || quoteClosed) {
+            throw new Error("Unexpected quote in CSV field.");
+          }
+          quoted = true;
+        } else {
+          if (quoteClosed) throw new Error("Unexpected text after quoted CSV field.");
+          field += character;
+        }
+      }
+
+      if (quoted) throw new Error("CSV contains an unterminated quoted field.");
+      if (field.length > 0 || row.length > 0 || quoteClosed) {
+        row.push(field);
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    function selectRecord(index, rowElement, radio) {
+      selectedRecordIndex = index;
+      const sampleIdColumn = csvHeaders.findIndex(
+        (header) => header.toLowerCase() === "sample_id"
+      );
+      const sampleIdText = sampleIdColumn < 0 ? "" : csvRecords[index][sampleIdColumn];
+      const sampleId = /^\d+$/.test(sampleIdText) ? Number(sampleIdText) : NaN;
+      selectedSampleId = Number.isSafeInteger(sampleId) && sampleId <= 0xffffffff
+        ? sampleId
+        : null;
+      for (const row of csvTable.tBodies[0].rows) {
+        const selected = Number(row.dataset.recordIndex) === index;
+        row.setAttribute("aria-selected", String(selected));
+        row.querySelector('input[type="radio"]').checked = selected;
+      }
+      radio.checked = true;
+      rowElement.setAttribute("aria-selected", "true");
+      fileMeta.dataset.selectedRecord = String(index + 1);
+      updateActionButtons();
+      try {
+        renderSpectrum(csvRecords[index], index);
+      } catch (error) {
+        spectrumPanel.hidden = false;
+        spectrumContent.hidden = true;
+        spectrumError.hidden = false;
+        spectrumError.textContent = `Could not display the selected spectrum: ${error.message}`;
+        setStatus(spectrumError.textContent, "error");
+      }
+      if (selectedSampleId === null) {
+        setStatus("The selected row has no valid Sample_id and cannot be deleted.", "error");
+      }
+    }
+
+    function renderSpectrum(record, recordIndex) {
+      const rawColumns = csvHeaders
+        .map((header, index) => ({ header, index }))
+        .filter(({ header }) => /^raw\d+$/i.test(header));
+      const calibratedColumns = new Map(
+        csvHeaders
+          .map((header, index) => ({ header, index }))
+          .filter(({ header }) => /^cal\d+$/i.test(header))
+          .map(({ header, index }) => [header.toLowerCase().slice(3), index])
+      );
+      if (rawColumns.length !== 18 || calibratedColumns.size !== 18) {
+        throw new Error("Expected 18 raw and 18 calibrated spectrum channels.");
+      }
+
+      const integrationColumn = csvHeaders.findIndex(
+        (header) => header.toLowerCase() === "integration time"
+      );
+      if (integrationColumn < 0 || record[integrationColumn].trim() === "") {
+        throw new Error('Missing value for "Integration time".');
+      }
+      const integrationTimeMs = Number(record[integrationColumn]);
+      if (!Number.isFinite(integrationTimeMs) || integrationTimeMs <= 0) {
+        throw new Error('Invalid value for "Integration time".');
+      }
+      const integrationCycles = Math.round(integrationTimeMs / 5.56) - 1;
+      const maxAdcValue = Math.max(
+        1,
+        Math.min(65535, (integrationCycles + 1) * 1024 - 1)
+      );
+
+      let maxRaw = 0;
+      let maxCalibrated = 0;
+      let calibratedMaxIndex = -1;
+      const channels = rawColumns.map(({ header, index }, channelIndex) => {
+        const wavelength = header.match(/\d+$/)[0];
+        const raw = Number(record[index]);
+        const calibratedIndex = calibratedColumns.get(wavelength);
+        if (record[index].trim() === "" || calibratedIndex === undefined ||
+            record[calibratedIndex].trim() === "") {
+          throw new Error(`Missing spectrum data for ${wavelength} nm.`);
+        }
+        const calibrated = Number(record[calibratedIndex]);
+        if (!Number.isFinite(raw) || !Number.isFinite(calibrated) || raw < 0) {
+          throw new Error(`Invalid spectrum data for ${wavelength} nm.`);
+        }
+        if (!Object.hasOwn(CHANNEL_COLORS, wavelength)) {
+          throw new Error(`No display color is defined for ${wavelength} nm.`);
+        }
+        if (raw > maxRaw) maxRaw = raw;
+        if (calibrated > maxCalibrated) {
+          maxCalibrated = calibrated;
+          calibratedMaxIndex = channelIndex;
+        }
+        return { wavelength, raw };
+      });
+
+      const recordTitle = `Record ${recordIndex + 1}`;
+      const sampleIdIndex = csvHeaders.findIndex((header) => header.toLowerCase() === "sample_id");
+      const labelIndex = csvHeaders.findIndex((header) => header.toLowerCase() === "label");
+      const details = [];
+      if (sampleIdIndex >= 0) details.push(`ID ${record[sampleIdIndex]}`);
+      if (labelIndex >= 0 && record[labelIndex] !== "") details.push(record[labelIndex]);
+      spectrumRecord.textContent = details.length > 0
+        ? `${recordTitle} · ${details.join(" · ")}`
+        : recordTitle;
+
+      if (calibratedMaxIndex >= 0) {
+        const peak = channels[calibratedMaxIndex];
+        const peakValue = maxCalibrated >= 65535 ? "BLINDED" : maxCalibrated.toFixed(1);
+        peakSummary.replaceChildren();
+        const channel = document.createElement("span");
+        channel.className = "peak-channel";
+        channel.textContent = `CH${calibratedMaxIndex + 1} · λ = ${peak.wavelength} nm`;
+        const value = document.createElement("span");
+        value.className = "peak-value";
+        value.textContent = peakValue;
+        peakSummary.append(channel, value);
+      } else {
+        peakSummary.textContent = "No positive calibrated peak";
+      }
+
+      spectrumChart.replaceChildren();
+      channels.forEach(({ wavelength, raw }) => {
+        const column = document.createElement("div");
+        column.className = "spectrum-column";
+        const rawValue = document.createElement("span");
+        rawValue.className = "spectrum-raw-value";
+        rawValue.textContent = String(raw);
+        const track = document.createElement("div");
+        track.className = "spectrum-bar-track";
+        const bar = document.createElement("div");
+        bar.className = "spectrum-bar";
+        const barValue = Math.trunc((raw * 100) / maxAdcValue);
+        bar.style.backgroundColor = CHANNEL_COLORS[wavelength];
+        bar.style.height = `${Math.min(barValue, 100)}%`;
+        bar.title = `${wavelength} nm: ${raw} raw (${barValue}%)`;
+        track.append(bar);
+        const wavelengthLabel = document.createElement("span");
+        wavelengthLabel.className = "spectrum-wavelength";
+        wavelengthLabel.textContent = wavelength;
+        wavelengthLabel.style.color = barValue >= 99
+          ? "#ff0000"
+          : barValue >= 90
+            ? "#ff8000"
+            : raw === maxRaw
+              ? "#00ff5e"
+              : "#91a3b2";
+        column.append(rawValue, track, wavelengthLabel);
+        spectrumChart.append(column);
+      });
+
+      const setup = [
+        ["Gain", "Gain", ""],
+        ["Integration time", "Integration time", " ms"],
+        ["Measurement time", "Measurement time", " s"],
+        ["Temperature", "Temperature", " °C"]
+      ];
+      setupValues.replaceChildren();
+      for (const [label, header, unit] of setup) {
+        const item = document.createElement("div");
+        item.className = "setup-value";
+        const term = document.createElement("dt");
+        term.textContent = label;
+        const value = document.createElement("dd");
+        const columnIndex = header === "Integration time"
+          ? integrationColumn
+          : csvHeaders.findIndex((column) => column.toLowerCase() === header.toLowerCase());
+        if (columnIndex < 0 || record[columnIndex].trim() === "") {
+          throw new Error(`Missing value for "${header}".`);
+        }
+        value.textContent = `${record[columnIndex]}${unit}`;
+        item.append(term, value);
+        setupValues.append(item);
+      }
+
+      spectrumContent.hidden = false;
+      spectrumError.hidden = true;
+      spectrumPanel.hidden = false;
+    }
+
+    function renderCsvTable(rows) {
+      if (rows.length === 0) throw new Error("CSV is empty.");
+      const [headers, ...records] = rows;
+      if (headers.length === 0 || headers.some((header) => header.length === 0)) {
+        throw new Error("CSV header is missing or invalid.");
+      }
+      if (records.some((record) => record.length !== headers.length)) {
+        throw new Error("CSV rows do not have the same number of columns as the header.");
+      }
+      csvHeaders = headers;
+      csvRecords = records;
+
+      const tableHead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      const selectionHeader = document.createElement("th");
+      selectionHeader.className = "select-column";
+      selectionHeader.scope = "col";
+      selectionHeader.textContent = "Select";
+      headerRow.append(selectionHeader);
+      for (const header of headers) {
+        const cell = document.createElement("th");
+        cell.scope = "col";
+        cell.textContent = header;
+        headerRow.append(cell);
+      }
+      tableHead.append(headerRow);
+
+      const tableBody = document.createElement("tbody");
+      records.forEach((record, index) => {
+        const tableRow = document.createElement("tr");
+        tableRow.dataset.recordIndex = String(index);
+        tableRow.setAttribute("aria-selected", "false");
+
+        const selectionCell = document.createElement("td");
+        selectionCell.className = "select-column";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "selectedCsvRecord";
+        radio.value = String(index);
+        radio.setAttribute("aria-label", `Select record ${index + 1}`);
+        radio.addEventListener("change", () => selectRecord(index, tableRow, radio));
+        selectionCell.append(radio);
+        tableRow.append(selectionCell);
+
+        for (const value of record) {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          tableRow.append(cell);
+        }
+        tableRow.addEventListener("click", (event) => {
+          if (event.target !== radio) selectRecord(index, tableRow, radio);
+        });
+        tableBody.append(tableRow);
+      });
+
+      csvTable.replaceChildren(tableHead, tableBody);
+      csvTableContainer.hidden = false;
+      emptyState.hidden = true;
+      return records.length;
     }
 
     function showCsv(text, byteLength) {
       csvContents = text;
-      csvPreview.textContent = text;
-      csvPreview.hidden = false;
-      emptyState.hidden = true;
       downloadButton.disabled = false;
 
-      const lines = text.replace(/\r\n/g, "\n").split("\n");
-      const lineCount = lines.length - (lines.at(-1) === "" ? 1 : 0);
-      const recordCount = Math.max(0, lineCount - 1);
-      fileMeta.textContent = `${lineCount.toLocaleString()} lines · ${recordCount.toLocaleString()} records · ${byteLength.toLocaleString()} bytes`;
+      try {
+        const rows = parseCsv(text);
+        const recordCount = renderCsvTable(rows);
+        fileMeta.textContent = `${(recordCount + 1).toLocaleString()} lines · ${recordCount.toLocaleString()} records · ${byteLength.toLocaleString()} bytes`;
+      } catch (error) {
+        csvTable.replaceChildren();
+        csvTableContainer.hidden = true;
+        spectrumPanel.hidden = true;
+        emptyState.hidden = false;
+        emptyState.textContent = `The CSV cannot be displayed as a table: ${error.message} You can still download the received file.`;
+        fileMeta.textContent = `${byteLength.toLocaleString()} bytes received; invalid CSV format for row display.`;
+      }
     }
 
     function failTransfer(message) {
       clearTransfer();
       setStatus(message, "error");
       connectButton.disabled = !device || !device.gatt.connected;
-      requestButton.disabled = !device || !device.gatt.connected;
       disconnectButton.disabled = !device || !device.gatt.connected;
+      updateActionButtons();
     }
 
     function handleDataNotification(event) {
@@ -374,25 +938,57 @@
         return;
       }
 
+      if (message === "DELETED") {
+        if (!deletePending) {
+          setStatus("Received an unexpected delete confirmation.", "error");
+          return;
+        }
+        clearTimeout(deleteTimer);
+        deleteTimer = null;
+        deletePending = false;
+        setStatus("Record deleted. Refreshing the CSV…", "working");
+        requestCsv();
+        return;
+      }
+
       if (message.startsWith("ERROR:")) {
         const errors = {
           "ERROR:OPEN": "The device could not open /data.csv.",
           "ERROR:READ": "The device failed while reading /data.csv.",
           "ERROR:COMMAND": "The device rejected the CSV request.",
-          "ERROR:BUSY": "The device is busy; reconnect and try again."
+          "ERROR:BUSY": "The device is busy; reconnect and try again.",
+          "ERROR:DELETE": "The device could not delete the selected row.",
+          "ERROR:NOT_FOUND": "The selected CSV row no longer exists. Get the CSV again.",
+          "ERROR:STALE": "The CSV changed after it was loaded. Get it again before deleting."
         };
-        failTransfer(errors[message] ?? `BLE transfer failed (${message}).`);
+        const errorMessage = errors[message] ?? `BLE operation failed (${message}).`;
+        if (deletePending) {
+          clearTimeout(deleteTimer);
+          deleteTimer = null;
+          deletePending = false;
+          if (message === "ERROR:NOT_FOUND" || message === "ERROR:STALE") {
+            clearSelection();
+          } else {
+            updateActionButtons();
+          }
+          setStatus(errorMessage, "error");
+          return;
+        }
+        failTransfer(errorMessage);
       }
     }
 
     function handleDisconnect() {
       clearTransfer();
+      clearTimeout(deleteTimer);
+      deleteTimer = null;
+      deletePending = false;
       controlCharacteristic = null;
       dataCharacteristic = null;
       statusCharacteristic = null;
       connectButton.disabled = false;
-      requestButton.disabled = true;
       disconnectButton.disabled = true;
+      updateActionButtons();
       setStatus("Device disconnected. The received CSV remains available.");
     }
 
@@ -424,8 +1020,8 @@
         await statusCharacteristic.startNotifications();
 
         connectButton.disabled = true;
-        requestButton.disabled = false;
         disconnectButton.disabled = false;
+        updateActionButtons();
         setStatus("Connected. Ready to receive the CSV.", "success");
       } catch (error) {
         if (device?.gatt.connected) device.gatt.disconnect();
@@ -434,8 +1030,8 @@
         dataCharacteristic = null;
         statusCharacteristic = null;
         connectButton.disabled = false;
-        requestButton.disabled = true;
         disconnectButton.disabled = true;
+        updateActionButtons();
         setStatus(error.name === "NotFoundError"
           ? "No device selected."
           : `Could not connect: ${error.message}`, "error");
@@ -447,18 +1043,23 @@
         setStatus("Connect to the spectrometer before requesting the CSV.", "error");
         return;
       }
-      if (transferPending) return;
+      if (transferPending || deletePending) return;
 
-      requestButton.disabled = true;
+      clearSelection();
       csvContents = null;
       downloadButton.disabled = true;
-      csvPreview.textContent = "";
-      csvPreview.hidden = true;
+      csvHeaders = [];
+      csvRecords = [];
+      csvTable.replaceChildren();
+      csvTableContainer.hidden = true;
+      spectrumPanel.hidden = true;
       emptyState.hidden = false;
+      emptyState.textContent = "Waiting for the spectrometer file…";
       fileMeta.textContent = "Waiting for the device…";
       transferChunks = [];
       receivedBytes = 0;
       transferPending = true;
+      updateActionButtons();
       transferTimer = setTimeout(() => {
         failTransfer("Timed out while waiting for the device to start the CSV transfer.");
       }, TRANSFER_TIMEOUT_MS);
@@ -470,6 +1071,55 @@
         );
       } catch (error) {
         failTransfer(`Could not request the CSV: ${error.message}`);
+      }
+    }
+
+    function failDelete(message) {
+      clearTimeout(deleteTimer);
+      deleteTimer = null;
+      deletePending = false;
+      updateActionButtons();
+      setStatus(message, "error");
+    }
+
+    async function deleteSelectedRow() {
+      if (!controlCharacteristic || !device?.gatt.connected) {
+        setStatus("Connect to the spectrometer before deleting a row.", "error");
+        return;
+      }
+      if (selectedRecordIndex === null || selectedSampleId === null || deletePending) {
+        setStatus("Select a valid CSV row before deleting it.", "error");
+        return;
+      }
+
+      const labelColumn = csvHeaders.findIndex(
+        (header) => header.toLowerCase() === "label"
+      );
+      const label = labelColumn < 0 ? "" : csvRecords[selectedRecordIndex][labelColumn];
+      const description = label ? ` (${label})` : "";
+      if (!confirm(`Permanently delete CSV row ${selectedRecordIndex + 1}${description} from the spectrometer?`)) {
+        return;
+      }
+
+      const command = new TextEncoder().encode(
+        `D,${selectedRecordIndex},${selectedSampleId}`
+      );
+      if (command.byteLength > 20) {
+        setStatus("The delete command exceeds the BLE write limit.", "error");
+        return;
+      }
+
+      deletePending = true;
+      updateActionButtons();
+      setStatus("Deleting the selected row from the spectrometer…", "working");
+      deleteTimer = setTimeout(() => {
+        failDelete("Timed out waiting for the spectrometer to confirm the deletion.");
+      }, TRANSFER_TIMEOUT_MS);
+
+      try {
+        await controlCharacteristic.writeValueWithResponse(command);
+      } catch (error) {
+        failDelete(`Could not delete the selected row: ${error.message}`);
       }
     }
 
@@ -495,6 +1145,7 @@
     requestButton.addEventListener("click", requestCsv);
     downloadButton.addEventListener("click", downloadCsv);
     disconnectButton.addEventListener("click", disconnect);
+    deleteRowButton.addEventListener("click", deleteSelectedRow);
   </script>
 </body>
 </html>

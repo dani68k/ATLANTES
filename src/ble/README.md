@@ -33,7 +33,7 @@ The advertised device name is `AS7265x CSV`.
 | GATT item | UUID | Properties | Purpose |
 | --- | --- | --- | --- |
 | CSV service | `9c5e1000-7e5a-4f2d-9a91-30e52e7b1b01` | — | Groups the CSV transfer characteristics |
-| Control | `9c5e1001-7e5a-4f2d-9a91-30e52e7b1b01` | Write | Write the UTF-8 command `GET_CSV` to start a transfer |
+| Control | `9c5e1001-7e5a-4f2d-9a91-30e52e7b1b01` | Write | `GET_CSV` starts a transfer; `D,<rowIndex>,<sampleId>` deletes one row |
 | CSV data | `9c5e1002-7e5a-4f2d-9a91-30e52e7b1b01` | Notify | Receives consecutive binary fragments of the CSV |
 | Status | `9c5e1003-7e5a-4f2d-9a91-30e52e7b1b01` | Read, Notify | Transfer state and final byte count |
 
@@ -42,6 +42,12 @@ control command. Data notifications contain up to 20 bytes and have no added
 framing; concatenate their byte values in arrival order and decode the result
 as UTF-8 after the transfer completes.
 
+`D,<rowIndex>,<sampleId>` uses a zero-based row index in oldest-first order,
+excluding the header. Include the row's `Sample_id` as a freshness check. The
+device verifies both values and rewrites the CSV through a temporary file
+before replacing it. The browser must ask for confirmation before sending this
+destructive command; after `DELETED`, it requests the CSV again.
+
 Status values:
 
 | Value | Meaning |
@@ -49,8 +55,12 @@ Status values:
 | `READY` | Service is available |
 | `BUSY` | CSV transfer is in progress |
 | `DONE:<bytes>` | Transfer completed; `<bytes>` is the expected CSV length |
+| `DELETED` | The requested CSV row was deleted |
 | `ERROR:OPEN` | `/data.csv` could not be opened |
 | `ERROR:READ` | CSV read failed |
+| `ERROR:DELETE` | The row could not be deleted because of a CSV/storage error |
+| `ERROR:NOT_FOUND` | The requested row index no longer exists |
+| `ERROR:STALE` | The row's `Sample_id` no longer matches |
 | `ERROR:COMMAND` | Unsupported control command |
 | `ERROR:BUSY` | Command queue is full |
 
