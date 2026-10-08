@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101923">
+  <title>AS7265x CSV Viewer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101923;
+      color: #e7eef5;
+      font-synthesis: none;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 12% 0%, #1b3741 0, transparent 38rem),
+        #101923;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    header {
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #69d8c1;
+      font-size: 0.76rem;
+      font-weight: 750;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      letter-spacing: -0.045em;
+    }
+
+    .intro {
+      max-width: 650px;
+      margin: 12px 0 0;
+      color: #a9b8c6;
+      line-height: 1.6;
+    }
+
+    .panel {
+      border: 1px solid #293946;
+      border-radius: 18px;
+      background: rgb(21 32 43 / 92%);
+      box-shadow: 0 18px 55px rgb(0 0 0 / 18%);
+    }
+
+    .connection {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    button {
+      min-height: 44px;
+      padding: 0 17px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+    }
+
+    button:not(:disabled):active {
+      transform: translateY(1px);
+    }
+
+    button:focus-visible {
+      outline: 3px solid #96f0dc;
+      outline-offset: 3px;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .primary {
+      background: #70e0c6;
+      color: #10221f;
+    }
+
+    .primary:not(:disabled):hover {
+      background: #91f0d8;
+    }
+
+    .secondary {
+      border-color: #405362;
+      background: #202e3a;
+      color: #e7eef5;
+    }
+
+    .secondary:not(:disabled):hover {
+      border-color: #70e0c6;
+    }
+
+    .status {
+      flex: 1 1 250px;
+      min-width: 0;
+      color: #a9b8c6;
+      line-height: 1.45;
+    }
+
+    .status[data-kind="success"] {
+      color: #83e9c4;
+    }
+
+    .status[data-kind="error"] {
+      color: #ff9b9b;
+    }
+
+    .status[data-kind="working"] {
+      color: #f1d28b;
+    }
+
+    .file-panel {
+      margin-top: 18px;
+      overflow: hidden;
+    }
+
+    .file-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px;
+      border-bottom: 1px solid #293946;
+    }
+
+    .file-heading h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .file-meta {
+      margin: 5px 0 0;
+      color: #91a3b2;
+      font-size: 0.86rem;
+    }
+
+    .preview {
+      max-height: min(62vh, 680px);
+      min-height: 180px;
+      margin: 0;
+      overflow: auto;
+      padding: 18px;
+      color: #d2e3ed;
+      font: 0.84rem/1.65 "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      tab-size: 2;
+      white-space: pre;
+    }
+
+    .empty {
+      display: grid;
+      min-height: 180px;
+      place-items: center;
+      padding: 24px;
+      color: #8294a3;
+      text-align: center;
+    }
+
+    .instructions {
+      margin: 18px 4px 0;
+      color: #8294a3;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    code {
+      color: #b7eadc;
+    }
+
+    @media (max-width: 560px) {
+      main {
+        padding: 30px 0;
+      }
+
+      .connection {
+        align-items: stretch;
+      }
+
+      .connection button {
+        flex: 1 1 130px;
+      }
+
+      .status {
+        flex-basis: 100%;
+      }
+
+      .file-heading {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Spectrometer · Bluetooth LE</p>
+      <h1>CSV measurements</h1>
+      <p class="intro">Connect to the AS7265x device to receive the complete measurement log, inspect every CSV line, and save a local copy.</p>
+    </header>
+
+    <section class="panel connection" aria-label="Bluetooth connection">
+      <button class="primary" id="connectButton" type="button">Connect device</button>
+      <button class="primary" id="requestButton" type="button" disabled>Get CSV</button>
+      <button class="secondary" id="downloadButton" type="button" disabled>Download CSV</button>
+      <button class="secondary" id="disconnectButton" type="button" disabled>Disconnect</button>
+      <div class="status" id="status" role="status" aria-live="polite" data-kind="neutral">Ready to connect.</div>
+    </section>
+
+    <section class="panel file-panel" aria-labelledby="fileTitle">
+      <div class="file-heading">
+        <div>
+          <h2 id="fileTitle">data.csv</h2>
+          <p class="file-meta" id="fileMeta">No file received yet.</p>
+        </div>
+      </div>
+      <div class="empty" id="emptyState">Connect to the spectrometer and request its CSV to see all lines here.</div>
+      <pre class="preview" id="csvPreview" aria-label="CSV file contents" hidden></pre>
+    </section>
+
+    <p class="instructions">Web Bluetooth needs a supported browser and a secure page origin. For local use, serve this folder from <code>localhost</code> (for example with VS Code Live Server). The device sends the file in BLE notifications; the page does not upload or change data on the spectrometer.</p>
+  </main>
+
+  <script>
+    "use strict";
+
+    const DEVICE_NAME = "AS7265x CSV";
+    const SERVICE_UUID = "9c5e1000-7e5a-4f2d-9a91-30e52e7b1b01";
+    const CONTROL_UUID = "9c5e1001-7e5a-4f2d-9a91-30e52e7b1b01";
+    const DATA_UUID = "9c5e1002-7e5a-4f2d-9a91-30e52e7b1b01";
+    const STATUS_UUID = "9c5e1003-7e5a-4f2d-9a91-30e52e7b1b01";
+    const TRANSFER_TIMEOUT_MS = 120000;
+
+    const connectButton = document.querySelector("#connectButton");
+    const requestButton = document.querySelector("#requestButton");
+    const downloadButton = document.querySelector("#downloadButton");
+    const disconnectButton = document.querySelector("#disconnectButton");
+    const statusElement = document.querySelector("#status");
+    const fileMeta = document.querySelector("#fileMeta");
+    const emptyState = document.querySelector("#emptyState");
+    const csvPreview = document.querySelector("#csvPreview");
+
+    let device = null;
+    let controlCharacteristic = null;
+    let dataCharacteristic = null;
+    let statusCharacteristic = null;
+    let transferChunks = [];
+    let receivedBytes = 0;
+    let transferTimer = null;
+    let transferPending = false;
+    let csvContents = null;
+
+    function setStatus(message, kind = "neutral") {
+      statusElement.textContent = message;
+      statusElement.dataset.kind = kind;
+    }
+
+    function clearTransfer() {
+      clearTimeout(transferTimer);
+      transferTimer = null;
+      transferChunks = [];
+      receivedBytes = 0;
+      transferPending = false;
+    }
+
+    function showCsv(text, byteLength) {
+      csvContents = text;
+      csvPreview.textContent = text;
+      csvPreview.hidden = false;
+      emptyState.hidden = true;
+      downloadButton.disabled = false;
+
+      const lines = text.replace(/\r\n/g, "\n").split("\n");
+      const lineCount = lines.length - (lines.at(-1) === "" ? 1 : 0);
+      const recordCount = Math.max(0, lineCount - 1);
+      fileMeta.textContent = `${lineCount.toLocaleString()} lines · ${recordCount.toLocaleString()} records · ${byteLength.toLocaleString()} bytes`;
+    }
+
+    function failTransfer(message) {
+      clearTransfer();
+      setStatus(message, "error");
+      connectButton.disabled = !device || !device.gatt.connected;
+      requestButton.disabled = !device || !device.gatt.connected;
+      disconnectButton.disabled = !device || !device.gatt.connected;
+    }
+
+    function handleDataNotification(event) {
+      if (!transferPending) return;
+
+      const value = event.target.value;
+      const chunk = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+      transferChunks.push(new Uint8Array(chunk));
+      receivedBytes += chunk.byteLength;
+    }
+
+    function finishTransfer(expectedBytes) {
+      if (receivedBytes !== expectedBytes) {
+        failTransfer(`CSV transfer incomplete: expected ${expectedBytes} bytes, received ${receivedBytes}.`);
+        return;
+      }
+
+      const bytes = new Uint8Array(receivedBytes);
+      let offset = 0;
+      for (const chunk of transferChunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+
+      try {
+        const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+        showCsv(text, receivedBytes);
+        clearTransfer();
+        requestButton.disabled = false;
+        setStatus(`CSV received and verified (${expectedBytes.toLocaleString()} bytes).`, "success");
+      } catch (error) {
+        failTransfer(`The received file is not valid UTF-8: ${error.message}`);
+      }
+    }
+
+    function handleStatusNotification(event) {
+      const message = new TextDecoder().decode(event.target.value).trim();
+      if (message === "READY") {
+        setStatus(device?.gatt.connected ? "Connected. Ready to receive the CSV." : "Ready to connect.");
+        return;
+      }
+
+      if (message === "BUSY") {
+        if (!transferPending) {
+          transferChunks = [];
+          receivedBytes = 0;
+          transferPending = true;
+          transferTimer = setTimeout(() => {
+            failTransfer("Timed out while waiting for the CSV transfer to finish.");
+          }, TRANSFER_TIMEOUT_MS);
+        }
+        setStatus("Receiving CSV from the spectrometer…", "working");
+        return;
+      }
+
+      const doneMatch = /^DONE:(\d+)$/.exec(message);
+      if (doneMatch) {
+        if (!transferPending) {
+          failTransfer("The device completed a transfer that was not requested.");
+          return;
+        }
+        finishTransfer(Number(doneMatch[1]));
+        return;
+      }
+
+      if (message.startsWith("ERROR:")) {
+        const errors = {
+          "ERROR:OPEN": "The device could not open /data.csv.",
+          "ERROR:READ": "The device failed while reading /data.csv.",
+          "ERROR:COMMAND": "The device rejected the CSV request.",
+          "ERROR:BUSY": "The device is busy; reconnect and try again."
+        };
+        failTransfer(errors[message] ?? `BLE transfer failed (${message}).`);
+      }
+    }
+
+    function handleDisconnect() {
+      clearTransfer();
+      controlCharacteristic = null;
+      dataCharacteristic = null;
+      statusCharacteristic = null;
+      connectButton.disabled = false;
+      requestButton.disabled = true;
+      disconnectButton.disabled = true;
+      setStatus("Device disconnected. The received CSV remains available.");
+    }
+
+    async function connect() {
+      if (!navigator.bluetooth) {
+        setStatus("Web Bluetooth is unavailable. Use a supported browser on localhost or HTTPS.", "error");
+        return;
+      }
+
+      connectButton.disabled = true;
+      setStatus("Choose the AS7265x CSV device in the Bluetooth picker…", "working");
+
+      try {
+        device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: DEVICE_NAME }],
+          optionalServices: [SERVICE_UUID]
+        });
+        device.addEventListener("gattserverdisconnected", handleDisconnect);
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        controlCharacteristic = await service.getCharacteristic(CONTROL_UUID);
+        dataCharacteristic = await service.getCharacteristic(DATA_UUID);
+        statusCharacteristic = await service.getCharacteristic(STATUS_UUID);
+
+        dataCharacteristic.addEventListener("characteristicvaluechanged", handleDataNotification);
+        statusCharacteristic.addEventListener("characteristicvaluechanged", handleStatusNotification);
+        await dataCharacteristic.startNotifications();
+        await statusCharacteristic.startNotifications();
+
+        connectButton.disabled = true;
+        requestButton.disabled = false;
+        disconnectButton.disabled = false;
+        setStatus("Connected. Ready to receive the CSV.", "success");
+      } catch (error) {
+        if (device?.gatt.connected) device.gatt.disconnect();
+        clearTransfer();
+        controlCharacteristic = null;
+        dataCharacteristic = null;
+        statusCharacteristic = null;
+        connectButton.disabled = false;
+        requestButton.disabled = true;
+        disconnectButton.disabled = true;
+        setStatus(error.name === "NotFoundError"
+          ? "No device selected."
+          : `Could not connect: ${error.message}`, "error");
+      }
+    }
+
+    async function requestCsv() {
+      if (!controlCharacteristic || !device?.gatt.connected) {
+        setStatus("Connect to the spectrometer before requesting the CSV.", "error");
+        return;
+      }
+      if (transferPending) return;
+
+      requestButton.disabled = true;
+      csvContents = null;
+      downloadButton.disabled = true;
+      csvPreview.textContent = "";
+      csvPreview.hidden = true;
+      emptyState.hidden = false;
+      fileMeta.textContent = "Waiting for the device…";
+      transferChunks = [];
+      receivedBytes = 0;
+      transferPending = true;
+      transferTimer = setTimeout(() => {
+        failTransfer("Timed out while waiting for the device to start the CSV transfer.");
+      }, TRANSFER_TIMEOUT_MS);
+      setStatus("Requesting CSV…", "working");
+
+      try {
+        await controlCharacteristic.writeValueWithResponse(
+          new TextEncoder().encode("GET_CSV")
+        );
+      } catch (error) {
+        failTransfer(`Could not request the CSV: ${error.message}`);
+      }
+    }
+
+    function disconnect() {
+      if (device?.gatt.connected) device.gatt.disconnect();
+    }
+
+    function downloadCsv() {
+      if (csvContents === null) return;
+
+      const blob = new Blob([csvContents], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "data.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    connectButton.addEventListener("click", connect);
+    requestButton.addEventListener("click", requestCsv);
+    downloadButton.addEventListener("click", downloadCsv);
+    disconnectButton.addEventListener("click", disconnect);
+  </script>
+</body>
+</html>

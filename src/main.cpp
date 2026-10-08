@@ -3,6 +3,7 @@
 #include <XPT2046_Touchscreen.h>
 #include "sensor/sensor.h"
 #include "app/app.h"
+#include "ble/ble.h"
 #include "ui/ui.h"
 #include "nvs_manager/nvs_manager.h"
 
@@ -120,6 +121,9 @@ void setup() {
   if (csvResult == csv::Result::MountFailed) {
     Serial.println("[CSV] Prepare the LittleFS image with PlatformIO uploadfs before logging.");
   }
+  if (!ble::begin()) {
+    Serial.println("[BLE] Failed to initialize CSV service.");
+  }
 }
 
 void loop() {
@@ -131,6 +135,7 @@ void loop() {
 
     Runtime();
     processSerialCommands();
+    ble::loop();
     ui_tick();
     lv_task_handler();
 
