@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -12,10 +13,10 @@ namespace {
 
 constexpr const char* TEMP_PATH = "/data.csv.tmp";
 constexpr char HEADER[] =
-    "sample_id,label,t_ms,cal410,cal435,cal460,cal485,cal510,cal535,"
-    "cal560,cal585,cal610,cal645,cal680,cal705,cal730,cal760,"
-    "cal810,cal860,cal900,cal940";
-constexpr size_t LINE_CAPACITY = 640;
+    "Sample_id,Label,White LED,UV LED,IR LED,Gain,Integration time,Measurement time,Temperature,"
+    "raw410,raw435,raw460,raw485,raw510,raw535,raw560,raw585,raw610,raw645,raw680,raw705,raw730,raw760,raw810,raw860,raw900,raw940,"
+    "cal410,cal435,cal460,cal485,cal510,cal535,cal560,cal585,cal610,cal645,cal680,cal705,cal730,cal760,cal810,cal860,cal900,cal940";
+constexpr size_t LINE_CAPACITY = 1024;
 
 bool mounted = false;
 bool ready = false;
@@ -38,38 +39,99 @@ Result readLine(File& file, char* line, size_t capacity) {
     return Result::InvalidData;
 }
 
-bool parseUnsigned(const char*& cursor) {
+bool parseUnsigned(const char*& cursor, char delimiter, uint32_t maximum) {
     if (*cursor < '0' || *cursor > '9') return false;
     char* end = nullptr;
     errno = 0;
     const unsigned long long value = strtoull(cursor, &end, 10);
-    if (errno == ERANGE || value > UINT32_MAX || *end != ',') return false;
-    cursor = end + 1;
+    if (errno == ERANGE || value > maximum || *end != delimiter) return false;
+    cursor = delimiter == '\0' ? end : end + 1;
+    return true;
+}
+
+bool parseFloat(const char*& cursor, char delimiter) {
+    if (*cursor == '\0') return false;
+    char* end = nullptr;
+    const float value = strtof(cursor, &end);
+    if (end == cursor || !isfinite(value) || *end != delimiter) return false;
+    cursor = delimiter == '\0' ? end : end + 1;
+    return true;
+}
+
+bool parseQuotedField(const char*& cursor, size_t maximumBytes) {
+    if (*cursor++ != '"') return false;
+    size_t labelBytes = 0;
+    for (;;) {
+        const unsigned char value = static_cast<unsigned char>(*cursor);
+        if (value == '\0') return false;
+        ++cursor;
+        if (value < 32 || value == 127) return false;
+        if (value == '"') {
+            if (*cursor != '"') {
+                if (*cursor++ != ',') return false;
+                return true;
+            }
+            ++cursor;
+        }
+        if (++labelBytes > maximumBytes) return false;
+    }
+}
+
+bool parseTextField(const char*& cursor, size_t maximumBytes) {
+    size_t length = 0;
+    while (*cursor != ',' && *cursor != '\0') {
+        const unsigned char value = static_cast<unsigned char>(*cursor++);
+        if (value < 32 || value == 127 || value == '"' || ++length > maximumBytes) {
+            return false;
+        }
+    }
+    if (*cursor++ != ',') return false;
     return true;
 }
 
 bool validRow(const char* cursor) {
-    if (!parseUnsigned(cursor) || *cursor++ != '"') return false;
-    size_t labelBytes = 0;
-    for (;;) {
-        const unsigned char value = static_cast<unsigned char>(*cursor++);
-        if (value < 32 || value == 127) return false;
-        if (value == '"') {
-            if (*cursor != '"') break;
-            ++cursor; // Escaped quote counts as one label byte.
-        }
-        if (++labelBytes > MAX_LABEL_BYTES) return false;
+    if (!parseUnsigned(cursor, ',', UINT32_MAX) ||
+        !parseQuotedField(cursor, MAX_LABEL_BYTES) ||
+        !parseTextField(cursor, sizeof(Record{}.whiteLed) - 1) ||
+        !parseTextField(cursor, sizeof(Record{}.uvLed) - 1) ||
+        !parseTextField(cursor, sizeof(Record{}.irLed) - 1) ||
+        !parseTextField(cursor, sizeof(Record{}.gain) - 1) ||
+        !parseFloat(cursor, ',') ||
+        !parseUnsigned(cursor, ',', UINT32_MAX) ||
+        !parseFloat(cursor, ',')) {
+        return false;
     }
-    if (*cursor++ != ',' || !parseUnsigned(cursor)) return false;
     for (uint8_t i = 0; i < CHANNEL_COUNT; ++i) {
-        char* end = nullptr;
-        const float value = strtof(cursor, &end);
-        if (end == cursor || !isfinite(value)) return false;
-        if (i + 1 == CHANNEL_COUNT) return *end == '\0';
-        if (*end != ',') return false;
-        cursor = end + 1;
+        if (!parseUnsigned(cursor, ',', UINT16_MAX)) return false;
     }
-    return false;
+    for (uint8_t i = 0; i < CHANNEL_COUNT; ++i) {
+        if (!parseFloat(cursor, i + 1 == CHANNEL_COUNT ? '\0' : ',')) return false;
+    }
+    return true;
+}
+
+bool safeRecordText(const char* value, size_t capacity) {
+    size_t length = 0;
+    while (length < capacity && value[length] != '\0') {
+        const unsigned char character = static_cast<unsigned char>(value[length]);
+        if (character < 32 || character == 127 || character == ',' || character == '"') {
+            return false;
+        }
+        ++length;
+    }
+    return length < capacity;
+}
+
+bool appendFormatted(char* line, size_t capacity, size_t& length,
+                     const char* format, ...) {
+    if (length >= capacity) return false;
+    va_list arguments;
+    va_start(arguments, format);
+    const int written = vsnprintf(line + length, capacity - length, format, arguments);
+    va_end(arguments);
+    if (written < 0 || static_cast<size_t>(written) >= capacity - length) return false;
+    length += static_cast<size_t>(written);
+    return true;
 }
 
 Result scanFile() {
@@ -143,36 +205,47 @@ Result append(const Record& record, const char* label) {
         }
         ++labelLength;
     }
+    if (!safeRecordText(record.whiteLed, sizeof(record.whiteLed)) ||
+        !safeRecordText(record.uvLed, sizeof(record.uvLed)) ||
+        !safeRecordText(record.irLed, sizeof(record.irLed)) ||
+        !safeRecordText(record.gain, sizeof(record.gain)) ||
+        !isfinite(record.integrationTimeMs) || !isfinite(record.temperature)) {
+        return Result::InvalidRecord;
+    }
     for (float value : record.calibrated) {
         if (!isfinite(value)) return Result::InvalidRecord;
     }
 
     char line[LINE_CAPACITY];
-    int written = snprintf(line, sizeof(line), "%lu,\"",
-                           static_cast<unsigned long>(record.sampleId));
-    if (written < 0 || static_cast<size_t>(written) >= sizeof(line)) {
+    size_t length = 0;
+    if (!appendFormatted(line, sizeof(line), length, "%lu,\"",
+                         static_cast<unsigned long>(record.sampleId))) {
         return Result::InvalidRecord;
     }
-    size_t length = static_cast<size_t>(written);
-    // Bounds are guaranteed by MAX_LABEL_BYTES and LINE_CAPACITY.
     for (size_t i = 0; i < labelLength; ++i) {
         if (label[i] == '"') line[length++] = '"';
         line[length++] = label[i];
     }
-    written = snprintf(line + length, sizeof(line) - length, "\",%lu",
-                       static_cast<unsigned long>(record.timestampMs));
-    if (written < 0 || static_cast<size_t>(written) >= sizeof(line) - length) {
+    if (!appendFormatted(line, sizeof(line), length, "\",%s,%s,%s,%s,%.2f,%lu,%.2f",
+                         record.whiteLed, record.uvLed, record.irLed, record.gain,
+                         record.integrationTimeMs,
+                         record.measureTime,
+                         record.temperature)) {
         return Result::InvalidRecord;
     }
-    length += written;
-    for (float value : record.calibrated) {
-        written = snprintf(line + length, sizeof(line) - length, ",%.9g",
-                           static_cast<double>(value));
-        if (written < 0 || static_cast<size_t>(written) >= sizeof(line) - length) {
+    for (uint16_t value : record.raw) {
+        if (!appendFormatted(line, sizeof(line), length, ",%u",
+                             static_cast<unsigned>(value))) {
             return Result::InvalidRecord;
         }
-        length += written;
     }
+    for (float value : record.calibrated) {
+        if (!appendFormatted(line, sizeof(line), length, ",%.4f",
+                             static_cast<double>(value))) {
+            return Result::InvalidRecord;
+        }
+    }
+    if (length + 1 >= sizeof(line)) return Result::InvalidRecord;
     line[length++] = '\n';
 
     if (!LittleFS.exists(FILE_PATH)) {
@@ -239,7 +312,7 @@ const char* resultMessage(Result result) {
         case Result::WriteFailed: return "CSV write failed";
         case Result::RenameFailed: return "Cannot replace CSV file";
         case Result::InvalidData: return "Invalid or incomplete CSV file";
-        case Result::InvalidRecord: return "Invalid label or calibrated values";
+        case Result::InvalidRecord: return "Invalid CSV record";
         case Result::Full: return "CSV full (100 records)";
         case Result::OutputFailed: return "CSV export failed";
     }

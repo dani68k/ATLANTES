@@ -1,5 +1,6 @@
 #include "app.h"
 #include <string.h>
+#include "sensor/sensor.h"
 
 namespace {
 char command[32];
@@ -15,25 +16,45 @@ void executeCommand() {
     *end = '\0';
     if (!*text) return;
 
-    if (strcmp(text, "csv") != 0) {
-        Serial.println("[SERIAL] Unknown command. Use: csv");
-        return;
-    }
+    // if (strcmp(text, "csv") != 0) {
+    //     Serial.println("[SERIAL] Unknown command. Use: csv");
+    //     return;
+    // }
     if (liveState || measureamentInProgress) {
         Serial.println("[CSV] Busy: stop LIVE and wait for the current measurement.");
         return;
     }
 
-    Serial.println("[CSV BEGIN /data.csv]");
-    const csv::Result result = csv::exportTo(Serial);
-    if (result == csv::Result::Ok) {
-        Serial.println("[CSV END]");
+    if (strcmp(text, "csv") == 0) {
+    
+        Serial.println("[CSV BEGIN /data.csv]");
+        const csv::Result result = csv::exportTo(Serial);
+        if (result == csv::Result::Ok) {
+            Serial.println("[CSV END]");
+        } else {
+            Serial.printf("\n[CSV] Export failed: %s\n", csv::resultMessage(result));
+        }
+    } else if (strcmp(text, "temp") == 0) {
+        float temperature = getTemperatureAverage();
+        Serial.printf("[SENSOR] Average Temperature: %.2f ºC\n", temperature);
     } else {
-        Serial.printf("\n[CSV] Export failed: %s\n", csv::resultMessage(result));
+        Serial.println("[SERIAL] Unknown command. List of commands:");
+        Serial.println("[SERIAL] 1. csv"); 
+        Serial.println("[SERIAL] 2. temp");
     }
 }
 } // namespace
 
+
+/**
+ * @brief Esta función se ejecuta en la interrupcion del puerto serie.
+ *        Permite leer comandos desde el puerto serie y ejecutarlos.
+ *        Está limitada a 32 bytes para no bloquear el puerto serie
+ *        con comandos largos.  
+ *        Filtra los caracteres no imprimibles y el backspace.
+ * @param void
+ * @return void
+ */
 void processSerialCommands() {
     // Bounded, non-blocking input; accept LF, CR or CRLF without duplicate execution.
     for (uint8_t budget = 0; budget < 32 && Serial.available() > 0; ++budget) {

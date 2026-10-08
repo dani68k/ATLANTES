@@ -211,7 +211,7 @@ void remove_style_panel(lv_obj_t *obj) {
 
 void init_style_slide_KNOB_DEFAULT(lv_style_t *style) {
     lv_style_set_bg_color(style, lv_color_hex(0x108cf0));
-    lv_style_set_radius(style, 1);
+    lv_style_set_radius(style, 10);
 };
 
 lv_style_t *get_style_slide_KNOB_DEFAULT() {

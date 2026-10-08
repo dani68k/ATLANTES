@@ -40,7 +40,7 @@ void create_screen_main() {
             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_font(obj, &ui_font_montserrat_bold_10, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_font(obj, &ui_font_montserrat_extra_bold_12, LV_PART_MAIN | LV_STATE_PRESSED);
-            lv_label_set_text_static(obj, "CH18 - λ = 610nm - I = 0.95\nGAIN x64 - Value = 65535IU");
+            lv_label_set_text_static(obj, "Data not ready\nPress LIVE to start");
         }
         {
             lv_obj_t *obj = lv_line_create(parent_obj);
@@ -926,6 +926,16 @@ void create_screen_main() {
             lv_obj_add_event_cb(obj, action_setup_icon, LV_EVENT_LONG_PRESSED, (void *)0);
             lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
         }
+        {
+            // label_leds_main
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.label_leds_main = obj;
+            lv_obj_set_pos(obj, 13, 199);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+            add_style_label_y(obj);
+            lv_label_set_text_static(obj, "WH 100%\nUV 50%\nIR 75%");
+        }
     }
     
     tick_screen_main();
@@ -1189,9 +1199,12 @@ void create_screen_setup() {
             }
         }
         {
+            // switch_auto_setup
             lv_obj_t *obj = lv_switch_create(parent_obj);
+            objects.switch_auto_setup = obj;
             lv_obj_set_pos(obj, 16, 151);
             lv_obj_set_size(obj, 46, 25);
+            lv_obj_add_event_cb(obj, action_switch_auto_setup, LV_EVENT_VALUE_CHANGED, (void *)0);
         }
         {
             // label_switch_setup

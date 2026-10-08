@@ -83,6 +83,7 @@ typedef struct _objects_t {
     lv_obj_t *button_live_main;
     lv_obj_t *button_led_main;
     lv_obj_t *setup_icon;
+    lv_obj_t *label_leds_main;
     lv_obj_t *obj3;
     lv_obj_t *panel_leds;
     lv_obj_t *obj4;
@@ -102,6 +103,7 @@ typedef struct _objects_t {
     lv_obj_t *slide_measure;
     lv_obj_t *button_save_setup;
     lv_obj_t *button_back_setup;
+    lv_obj_t *switch_auto_setup;
     lv_obj_t *label_switch_setup;
     lv_obj_t *keyboard_keyboard;
     lv_obj_t *textarea_keyboard;

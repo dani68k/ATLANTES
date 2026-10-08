@@ -8,6 +8,8 @@
 
 static csv::Record pendingLogRecord;
 static bool pendingLog = false;
+bool LEDsState = false;
+bool ledAuto = false;
 
 static void showLogMessage(const char* message) {
     lv_obj_t* box = lv_msgbox_create(nullptr);
@@ -93,7 +95,6 @@ extern void action_white_roller_change(lv_event_t * e) {
 }
 
 extern void action_button_led_main(lv_event_t * e) {
-    static bool LEDsState = false;
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_RELEASED){
         if (!LEDsState) {
@@ -101,6 +102,38 @@ extern void action_button_led_main(lv_event_t * e) {
             Serial.println("Current White: " + String(configActual.currentWhite));
             Serial.println("Current IR: " + String(configActual.currentIR));
             Serial.println("Current UV: " + String(configActual.currentUV));
+            uint16_t currentWhite;
+            if (configActual.currentWhite == 0) currentWhite = 0;
+            else if (configActual.currentWhite == 1) currentWhite = 25;
+            else if (configActual.currentWhite == 2) currentWhite = 50;
+            else if (configActual.currentWhite == 3) currentWhite = 75;
+            else if (configActual.currentWhite == 4) currentWhite = 100;
+            uint16_t currentIR;
+            if (configActual.currentIR == 0) currentIR = 0;
+            else if (configActual.currentIR == 1) currentIR = 25;
+            else if (configActual.currentIR == 2) currentIR = 50;
+            else if (configActual.currentIR == 3) currentIR = 75;
+            else if (configActual.currentIR == 4) currentIR = 100;
+            uint16_t currentUV;
+            if (configActual.currentUV == 0) currentUV = 0;
+            else if (configActual.currentUV == 1) currentUV = 25;
+            else if (configActual.currentUV == 2) currentUV = 50;
+            else if (configActual.currentUV == 3) currentUV = 75;
+            else if (configActual.currentUV == 4) currentUV = 100;
+            char buffer[64];        // Buffer principal
+            char txtWhite[8];
+            char txtIR[8];
+            char txtUV[8];
+
+            snprintf(txtWhite, sizeof(txtWhite), currentWhite == 0 ? "OFF" : "%d%%", currentWhite);
+            snprintf(txtIR, sizeof(txtIR),       currentIR == 0    ? "OFF" : "%d%%", currentIR);
+            snprintf(txtUV, sizeof(txtUV),       currentUV == 0    ? "OFF" : "%d%%", currentUV);
+
+            snprintf(buffer, sizeof(buffer), "WH %s\r IR %s\r UV %s", txtWhite, txtIR, txtUV);
+
+            lv_label_set_text(objects.label_leds_main, buffer);
+            lv_obj_set_hidden(objects.setup_icon, true);
+            lv_obj_set_hidden(objects.label_leds_main, false);        
             LEDsState = true;
             lv_obj_set_style_bg_color(objects.button_led_main, lv_color_hex(0x00FF5E), LV_PART_MAIN);
             lv_obj_set_style_text_color(objects.button_led_main, lv_color_hex(0x000000), LV_PART_MAIN);
@@ -111,6 +144,8 @@ extern void action_button_led_main(lv_event_t * e) {
             if (configActual.currentUV > 0) setUVLEDCurrent(configActual.currentUV);
             else resetUVLEDCurrent();
         } else {
+            lv_obj_set_hidden(objects.setup_icon, false);
+            lv_obj_set_hidden(objects.label_leds_main, true);
             Serial.println("LEDs OFF");
             resetWhiteLEDCurrent(); 
             resetIRLEDCurrent();
@@ -154,6 +189,7 @@ extern void action_button_save_setup(lv_event_t * e) {
         configActual.currentUV = lv_roller_get_selected(objects.roller_uv);
         configActual.ganancia = lv_slider_get_value(objects.slide_gain);
         nvs_guardar_configuracion();
+        loadScreen(SCREEN_ID_MAIN);
     }
 }
 
@@ -259,5 +295,15 @@ extern void action_keyboard_ready(lv_event_t * e) {
                  static_cast<unsigned>(count),
                  static_cast<unsigned>(csv::MAX_RECORDS));
         showLogMessage(message);
+    }
+}
+
+extern void action_switch_auto_setup(lv_event_t * e) {
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_VALUE_CHANGED) {
+        bool value = lv_obj_has_state(objects.switch_auto_setup, LV_STATE_CHECKED);
+        Serial.printf("[UI] Auto setup: %s\n", value ? "ON" : "OFF");
+        if (value) ledAuto = true;
+        else ledAuto = false;
     }
 }

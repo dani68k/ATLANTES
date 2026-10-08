@@ -13,7 +13,14 @@ constexpr const char* FILE_PATH = "/data.csv";
 
 struct Record {
     uint32_t sampleId = 0;
-    uint32_t timestampMs = 0; // Time since boot, supplied by acquisition.
+    char whiteLed[5] = {};
+    char uvLed[5] = {};
+    char irLed[5]  = {};
+    char gain[4] = {}; // setup of the measure
+    float integrationTimeMs = 0.0f; // setup of the measure
+    uint32_t measureTime = 0; // setup of the measure
+    float temperature = 0.0f;
+    uint16_t raw[CHANNEL_COUNT] = {};
     float calibrated[CHANNEL_COUNT] = {}; // 410..940 nm, in display order.
 };
 

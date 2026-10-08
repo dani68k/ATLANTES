@@ -62,32 +62,34 @@ Compilar el firmware no equivale a subir la imagen LittleFS.
 
 ## 4. Formato de los registros
 
-Cada medida ocupa una línea. El archivo tiene 21 columnas:
+Cada medida ocupa una línea. El archivo tiene 45 columnas: los datos de
+configuración, el nombre introducido en LOG, la temperatura y los 18 valores
+raw y calibrados:
 
 ```csv
-sample_id,label,t_ms,cal410,cal435,cal460,cal485,cal510,cal535,cal560,cal585,cal610,cal645,cal680,cal705,cal730,cal760,cal810,cal860,cal900,cal940
+Sample_id,Label,White LED,UV LED,IR LED,Gain,Integration time,Measurement time,Temperature,raw410,raw435,raw460,raw485,raw510,raw535,raw560,raw585,raw610,raw645,raw680,raw705,raw730,raw760,raw810,raw860,raw900,raw940,cal410,cal435,cal460,cal485,cal510,cal535,cal560,cal585,cal610,cal645,cal680,cal705,cal730,cal760,cal810,cal860,cal900,cal940
 ```
 
 | Campo | Significado |
 | --- | --- |
-| `sample_id` | Identificador suministrado por la adquisición; el módulo no lo genera ni exige que sea único |
-| `label` | Nombre de la muestra, entre comillas dobles |
-| `t_ms` | Tiempo de adquisición desde el arranque, suministrado por el llamador |
-| `cal410` … `cal940` | Los 18 valores calibrados en orden de longitud de onda |
-
-Ejemplo con valores ficticios:
-
-```csv
-1,"Muestra A",12500,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
-```
+| `Sample_id` | Identificador suministrado por la adquisición; el módulo no lo genera ni exige que sea único |
+| `Label` | Nombre introducido en LOG, entre comillas dobles |
+| `White LED`, `UV LED`, `IR LED` | Configuración de intensidad de los LEDs |
+| `Gain` | Ganancia usada por el sensor |
+| `Integration time` | Tiempo de integración en milisegundos |
+| `Measurement time` | Período de medida en segundos |
+| `Temperature` | Temperatura media del sensor en grados Celsius |
+| `raw410` … `raw940` | Las 18 lecturas raw (`uint16_t`) en orden de longitud de onda |
+| `cal410` … `cal940` | Los 18 valores calibrados en el mismo orden |
 
 Reglas del formato:
 
 - Separador de columnas: coma. Separador decimal: punto.
-- Calibrados escritos con hasta 9 cifras significativas (`%.9g`); pueden usar
-  notación científica. Esto es precisión de representación, no precisión física.
-- Se aceptan valores finitos, incluidos cero y negativos. Se rechazan `NaN`
-  e infinito. No se aplica recorte a 65535 ni validación física de la medida.
+- Integración, temperatura y valores calibrados se escriben con hasta 9 cifras
+  significativas (`%.9g`); pueden usar notación científica. Se rechazan
+  `NaN` e infinito.
+- Las cadenas de configuración no pueden contener comas, comillas ni
+  caracteres de control y deben caber en sus campos de `Record`.
 - Nombre de hasta 64 bytes; con texto UTF-8 no necesariamente son 64 caracteres.
   Se permite un nombre vacío, pero no un puntero nulo.
 - Las comas y comillas en el nombre se escapan automáticamente. Por ejemplo,
@@ -98,12 +100,10 @@ Reglas del formato:
   Una última línea sin terminador se considera incompleta.
 
 La cabecera no cuenta como medida: con 100 registros hay 101 líneas.
-El formato actual no incluye ganancia, integración ni estado de los LEDs.
-Añadirlos requerirá actualizar la estructura, la cabecera y la lectura del archivo.
 
-`timestampMs` y `sampleId` son `uint32_t`. El tiempo no representa fecha y hora:
-`millis()` reinicia al arrancar y desborda aproximadamente cada 49,7 días.
-El contador de filas persistidas no sustituye a un identificador de adquisición.
+`sampleId` y `measureTime` son `uint32_t`. `measureTime` expresa el período en
+segundos; no representa fecha y hora. El contador de filas persistidas no
+sustituye a un identificador de adquisición.
 
 ## 5. API disponible
 
@@ -251,7 +251,7 @@ La cabecera se prepara en `/data.csv.tmp` antes de reemplazar `/data.csv`.
 | `WriteFailed` | Escritura incompleta; no considerar guardada la medida |
 | `RenameFailed` | No se pudo sustituir el CSV por el temporal |
 | `InvalidData` | Archivo incompatible, mal formado o incompleto; exportar antes de decidir si se borra |
-| `InvalidRecord` | Nombre no admitido o algún calibrado no finito |
+| `InvalidRecord` | Nombre, configuración u otro campo del registro no admitido |
 | `Full` | Ya hay 100 medidas; el guardado actual no elimina ninguna |
 | `OutputFailed` | El destino no pudo recibir la exportación |
 
@@ -260,8 +260,9 @@ no añadir datos detrás de una fila incompleta. `begin()` vuelve a examinar el
 archivo; si la fila sigue incompleta, devuelve `InvalidData`. No hay reparación
 automática ni eliminación silenciosa de esa fila.
 
-La validación comprueba el formato y que los calibrados sean finitos. No demuestra
-que la adquisición I²C haya sido correcta. La robustez ante cortes de alimentación
+La validación comprueba el formato, los límites de las cadenas y que los campos
+float sean finitos. No demuestra que la adquisición I²C haya sido correcta. La
+robustez ante cortes de alimentación
 debe comprobarse en hardware; escribir y cerrar un archivo no convierte toda la
 secuencia de guardado en una transacción de aplicación.
 

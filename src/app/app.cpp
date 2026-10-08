@@ -9,6 +9,7 @@
 bool liveState = false;
 bool measureamentInProgress = false;
 bool firstMeasureament = false;
+extern bool LEDsState;
 
 static constexpr unsigned long MEASUREMENT_TIMEOUT_MS = 5000;
 
@@ -102,7 +103,7 @@ static SpectrumAnalysis analyzeSpectrum() {
 
 static void updateSpectrumUI(const SpectrumAnalysis& analysis) {
     uint16_t maxADCvalue = getMaxADCvalue();
-    Serial.println("Max ADC value: " + String(maxADCvalue));
+    // Serial.println("[SENSOR] Max ADC value: " + String(maxADCvalue));
     // Update the bars if any value has changed
     for(int i = 0; i < 18; i++) {
         uint32_t barValue = map(rawData[i], 0, maxADCvalue, 0, 100);
@@ -119,21 +120,35 @@ static void updateSpectrumUI(const SpectrumAnalysis& analysis) {
         } else { // NORMAL READING
             lv_obj_set_style_text_color(array_labels[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN); // BLANCO
         }
-
-
-
     }
 
-    char buffer_label_indicator[60] = "Not data read yet\rMAX: NA";
+    char buffer_label_indicator[60] = "Not data read yet\r";
     if (analysis.calibratedMaxIndex >= 0) {
         const int i = analysis.calibratedMaxIndex;
+        uint16_t gainValue = configActual.ganancia;
+        if (configActual.ganancia == 0) gainValue = 1;
+        else if (configActual.ganancia == 1) gainValue = 3.7;
+        else if (configActual.ganancia == 2) gainValue = 16;
+        else if (configActual.ganancia == 3) gainValue = 64;
+
+        float timeIntegrationValue = (configActual.integracionCiclos + 1) * 5.56; // in ms 2.78 * 2 reading 6 channels of 3 sensors
+
         if (analysis.maxCalibrated >= 65535.00) {
             snprintf(buffer_label_indicator, sizeof(buffer_label_indicator),
-                     "CH%d - λ = %dnm\rSATURATED:", i + 1, longitudesOnda[i]);
+                     "CH%d - λ = %dnm - BLINDED\rx%d - %.1fms - %ds - %.2fºC", 
+                     i + 1, longitudesOnda[i], 
+                     gainValue, 
+                     timeIntegrationValue, 
+                     getTemperatureAverage());
         } else {
             snprintf(buffer_label_indicator, sizeof(buffer_label_indicator),
-                     "CH%d - λ = %dnm\rMAX: %.2f", i + 1, longitudesOnda[i],
-                     analysis.maxCalibrated);
+                     "CH%d - λ = %dnm - %.1f\rx%d - %.1fms - %ds - %.2fºC", 
+                     i + 1, longitudesOnda[i],
+                     analysis.maxCalibrated,
+                     gainValue,
+                     timeIntegrationValue,
+                     configActual.tiempoEntreTomasMS / 1000,
+                     getTemperatureAverage());
         }
     }
     lv_label_set_text(objects.label_max_indicator, buffer_label_indicator);
@@ -144,10 +159,10 @@ void Runtime() {
     unsigned long currentTime = millis();
 
     // 1. CONTROL DE DISPARO DINÁMICO (Usa el tiempo real del SETUP)
-    if (!liveState && !measureamentInProgress) {
-        lv_obj_remove_flag(objects.setup_icon, LV_OBJ_FLAG_HIDDEN);
+    if (!liveState && !measureamentInProgress && !LEDsState) {
+        lv_obj_set_hidden(objects.setup_icon, false);
     } else {
-        lv_obj_add_flag(objects.setup_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_hidden(objects.setup_icon, true);
     }
     // Compara contra el parámetro guardado en tu estructura modular NVS
     if (liveState && !measureamentInProgress &&
@@ -182,25 +197,55 @@ void Runtime() {
         uint32_t timestamp = millis();
         readRawChannels(rawData);
         uint32_t elapsed = millis() - timestamp;
-        Serial.printf("[SENSOR] Data read in %lu ms\n", elapsed);
+        // Serial.printf("[SENSOR] Data read in %lu ms\n", elapsed);
 
         // Read calibrated channels before calculating or displaying the sample.
         timestamp = millis();
         readCalibratedChannels(calibratedData);
         elapsed = millis() - timestamp;
-        Serial.printf("[SENSOR] Calibrated data read in %lu ms\n", elapsed);
+        // Serial.printf("[SENSOR] Calibrated data read in %lu ms\n", elapsed);
 
         // Publish only after both sets of channels have been collected.
         ++latestCsvRecord.sampleId;
-        latestCsvRecord.timestampMs = lastTime;
+        //WHITE LED
+        if (configActual.currentWhite == 0) snprintf(latestCsvRecord.whiteLed, sizeof(latestCsvRecord.whiteLed), "OFF"); 
+        else if (configActual.currentWhite == 1) snprintf(latestCsvRecord.whiteLed, sizeof(latestCsvRecord.whiteLed), "%d%%", 25);
+        else if (configActual.currentWhite == 2) snprintf(latestCsvRecord.whiteLed, sizeof(latestCsvRecord.whiteLed), "%d%%", 50);
+        else if (configActual.currentWhite == 3) snprintf(latestCsvRecord.whiteLed, sizeof(latestCsvRecord.whiteLed), "%d%%", 75);
+        else if (configActual.currentWhite == 4) snprintf(latestCsvRecord.whiteLed, sizeof(latestCsvRecord.whiteLed), "%d%%", 100);
+        //UV LED
+        if (configActual.currentUV == 0) snprintf(latestCsvRecord.uvLed, sizeof(latestCsvRecord.uvLed), "OFF"); 
+        else if (configActual.currentUV == 1) snprintf(latestCsvRecord.uvLed, sizeof(latestCsvRecord.uvLed), "%d%%", 25);
+        else if (configActual.currentUV == 2) snprintf(latestCsvRecord.uvLed, sizeof(latestCsvRecord.uvLed), "%d%%", 50);
+        else if (configActual.currentUV == 3) snprintf(latestCsvRecord.uvLed, sizeof(latestCsvRecord.uvLed), "%d%%", 75);
+        else if (configActual.currentUV == 4) snprintf(latestCsvRecord.uvLed, sizeof(latestCsvRecord.uvLed), "%d%%", 100);
+        //IR LED
+        if (configActual.currentIR == 0) snprintf(latestCsvRecord.irLed, sizeof(latestCsvRecord.irLed), "OFF"); 
+        else if (configActual.currentIR == 1) snprintf(latestCsvRecord.irLed, sizeof(latestCsvRecord.irLed), "%d%%", 25);
+        else if (configActual.currentIR == 2) snprintf(latestCsvRecord.irLed, sizeof(latestCsvRecord.irLed), "%d%%", 50);
+        else if (configActual.currentIR == 3) snprintf(latestCsvRecord.irLed, sizeof(latestCsvRecord.irLed), "%d%%", 75);
+        else if (configActual.currentIR == 4) snprintf(latestCsvRecord.irLed, sizeof(latestCsvRecord.irLed), "%d%%", 100);
+        //GAIN
+        if (configActual.ganancia == 0) snprintf(latestCsvRecord.gain, sizeof(latestCsvRecord.gain), "x1");
+        else if (configActual.ganancia == 1) snprintf(latestCsvRecord.gain, sizeof(latestCsvRecord.gain), "x3.7");
+        else if (configActual.ganancia == 2) snprintf(latestCsvRecord.gain, sizeof(latestCsvRecord.gain), "x16");
+        else if (configActual.ganancia == 3) snprintf(latestCsvRecord.gain, sizeof(latestCsvRecord.gain), "x64");
+        //INTEGRATION TIME
+        latestCsvRecord.integrationTimeMs = (configActual.integracionCiclos + 1) * 2.78 * 2; // in ms
+        //MEASURE PERIOD
+        latestCsvRecord.measureTime = configActual.tiempoEntreTomasMS / 1000; // in seconds
+        //SENSOR TEMPERATURE
+        latestCsvRecord.temperature = getTemperatureAverage();
+        //RAW AND CALIBRATED DATA
         for (uint8_t i = 0; i < csv::CHANNEL_COUNT; ++i) {
+            latestCsvRecord.raw[i] = rawData[i];
             latestCsvRecord.calibrated[i] = calibratedData[i];
         }
         latestCsvRecordAvailable = true;
 
         const SpectrumAnalysis analysis = analyzeSpectrum();
-        Serial.println("Max raw value: " + String(analysis.maxRaw));
-        Serial.println("Max value: " + String(analysis.maxCalibrated, 2));
+        // Serial.println("[SENSOR] Max raw value: " + String(analysis.maxRaw));
+        // Serial.println("[SENSOR] Max value: " + String(analysis.maxCalibrated, 2));
         updateSpectrumUI(analysis);
 
         measureamentInProgress = false; // Reset the flag after processing the data    

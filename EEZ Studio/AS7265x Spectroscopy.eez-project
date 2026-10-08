@@ -248,6 +248,15 @@
       "componentGroups": [],
       "userProperties": [],
       "name": "button_log"
+    },
+    {
+      "objID": "1923e2db-6788-4dab-b75e-61ed8353ac8d",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "switch_auto_setup"
     }
   ],
   "userPages": [
@@ -326,7 +335,7 @@
               },
               "group": "",
               "groupIndex": 0,
-              "text": "CH18 - λ = 610nm - I = 0.95\nGAIN x64 - Value = 65535IU",
+              "text": "Data not ready\nPress LIVE to start",
               "textType": "literal",
               "longMode": "WRAP",
               "recolor": true,
@@ -4271,6 +4280,52 @@
               "value": 0,
               "valueType": "literal",
               "previewValue": 0
+            },
+            {
+              "objID": "e0cf8a4f-650e-4eaf-aa49-5d6eeea82bb7",
+              "type": "LVGLLabelWidget",
+              "left": 13,
+              "top": 199,
+              "width": 48,
+              "height": 33,
+              "customInputs": [],
+              "customOutputs": [],
+              "style": {
+                "objID": "8769df92-d2b1-434e-fc10-e926579b9371",
+                "useStyle": "default",
+                "conditionalStyles": [],
+                "childStyles": []
+              },
+              "timeline": [],
+              "eventHandlers": [],
+              "identifier": "label_leds_main",
+              "leftUnit": "px",
+              "topUnit": "px",
+              "widthUnit": "content",
+              "heightUnit": "content",
+              "children": [],
+              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "hiddenFlag": true,
+              "hiddenFlagType": "literal",
+              "clickableFlagType": "literal",
+              "flagScrollbarMode": "",
+              "flagScrollDirection": "",
+              "scrollSnapX": "",
+              "scrollSnapY": "",
+              "checkedStateType": "literal",
+              "disabledStateType": "literal",
+              "states": "",
+              "useStyle": "Label_Y",
+              "localStyles": {
+                "objID": "2952c613-7261-4812-ea08-a9b99f0c9b4b"
+              },
+              "group": "",
+              "groupIndex": 0,
+              "text": "WH 100%\nUV 50%\nIR 75%",
+              "textType": "literal",
+              "longMode": "WRAP",
+              "recolor": false,
+              "useStaticText": true
             }
           ],
           "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLLABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
@@ -5557,7 +5612,16 @@
                 "childStyles": []
               },
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "4b8452e3-7aa0-40e9-a863-906dbc2fc903",
+                  "eventName": "VALUE_CHANGED",
+                  "handlerType": "action",
+                  "action": "switch_auto_setup",
+                  "userData": 0
+                }
+              ],
+              "identifier": "switch_auto_setup",
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
@@ -5947,7 +6011,7 @@
             "KNOB": {
               "DEFAULT": {
                 "bg_color": "#108cf0",
-                "radius": 1
+                "radius": 10
               }
             },
             "MAIN": {
@@ -6065,7 +6129,7 @@
       "ascent": 10,
       "descent": 2,
       "glyphs": [],
-      "lvglRanges": "32-127, 955",
+      "lvglRanges": "32-127, 955, 186",
       "lvglSymbols": "",
       "lvglAdditionalSources": [],
       "lvglGlyphs": {

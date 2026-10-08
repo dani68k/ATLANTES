@@ -1,6 +1,8 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[AS7265x Spectroscopy.eez-project]:/userPages/0",
+    "selectedUserPageObject": "[AS7265x Spectroscopy.eez-project]:/userPages/1",
+    "selectedStyleObject": "[AS7265x Spectroscopy.eez-project]:/lvglStyles/styles/5",
+    "selectedFontObject": "[AS7265x Spectroscopy.eez-project]:/fonts/2",
     "subnavigationSelectedItems": {}
   },
   "layoutModel": {
@@ -21,7 +23,7 @@
           },
           {
             "type": "border",
-            "selected": 2,
+            "selected": 1,
             "size": 240,
             "location": "right",
             "children": [
@@ -194,7 +196,7 @@
             {
               "type": "tabset",
               "id": "EDITORS",
-              "weight": 56.388392857142854,
+              "weight": 59.424107142857146,
               "selected": 1,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
@@ -214,20 +216,21 @@
                 {
                   "type": "tab",
                   "id": "#0b22f497-81f2-4031-a912-75af3b2abffe",
-                  "name": "Main",
+                  "name": "Setup",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[AS7265x Spectroscopy.eez-project]:/userPages/0",
+                    "objectPath": "[AS7265x Spectroscopy.eez-project]:/userPages/1",
                     "permanent": false
                   },
                   "icon": "svg:page"
                 }
-              ]
+              ],
+              "active": true
             },
             {
               "type": "tabset",
               "id": "#08b5e531-9a6d-43e9-a11f-b4f95897e297",
-              "weight": 28.611607142857142,
+              "weight": 25.575892857142858,
               "children": [
                 {
                   "type": "tab",
@@ -237,8 +240,7 @@
                   "enableClose": false,
                   "icon": "svg:properties"
                 }
-              ],
-              "active": true
+              ]
             }
           ]
         }
@@ -843,7 +845,8 @@
                       "component": "styles",
                       "enableClose": false
                     }
-                  ]
+                  ],
+                  "active": true
                 },
                 {
                   "type": "tabset",
@@ -1057,9 +1060,7 @@
       "selectionBack": {
         "0": {
           "2": {
-            "20": {
-              "$selected": true
-            }
+            "20": {}
           },
           "6": {},
           "9": {}
@@ -1078,6 +1079,30 @@
         "secondToPx": 200,
         "scrollLeft": 0
       }
+    },
+    "[AS7265x Spectroscopy.eez-project]:/userPages/1[flow-state]": {
+      "selectionFront": {},
+      "selectionBack": {
+        "0": {}
+      },
+      "transform": {
+        "translate": {
+          "x": -160,
+          "y": -120
+        },
+        "scale": 1.75
+      },
+      "timeline": {
+        "isEditorActive": false,
+        "position": 0,
+        "secondToPx": 200,
+        "scrollLeft": 0
+      }
+    },
+    "[AS7265x Spectroscopy.eez-project]:/lvglStyles/styles[tree-state]": {
+      "5": {
+        "$selected": true
+      }
     }
   },
   "activeOutputSection": 0,
@@ -1091,10 +1116,12 @@
   "showComponentDescriptions": true,
   "logsPanelFilter": "all",
   "selectedStylePropertyName": "",
-  "lvglPart": "INDICATOR",
+  "lvglPart": "KNOB",
   "lvglState": "DEFAULT",
   "lvglExpandedPropertiesGroup": [
-    "BACKGROUND"
+    "TEXT",
+    "BORDER",
+    "MISCELLANEOUS"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,

@@ -319,3 +319,7 @@ void setUVLEDCurrent(int current) {
 void resetUVLEDCurrent() {
   sensor.disableBulb(AS7265x_LED_UV);
 }
+
+float getTemperatureAverage() {
+  return sensor.getTemperatureAverage();
+}

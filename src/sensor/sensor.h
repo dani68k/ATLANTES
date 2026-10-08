@@ -54,4 +54,5 @@ void setIRLEDCurrent(int current);
 void resetIRLEDCurrent();
 void setUVLEDCurrent(int current);
 void resetUVLEDCurrent();
+float getTemperatureAverage();
 #endif
