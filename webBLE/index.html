@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101923">
-  <title>AS7265x CSV Viewer</title>
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <title>AS7265x CSV Manager</title>
   <style>
     :root {
       color-scheme: dark;
@@ -416,8 +417,7 @@
   <main>
     <header>
       <p class="eyebrow">Spectrometer · Bluetooth LE</p>
-      <h1>CSV measurements</h1>
-      <p class="intro">Connect to the AS7265x device to receive the complete measurement log, inspect every CSV line, and save a local copy.</p>
+      <h1>CSV Manager</h1>
     </header>
 
     <section class="panel connection" aria-label="Bluetooth connection">
@@ -460,7 +460,6 @@
       </section>
     </section>
 
-    <p class="instructions">Web Bluetooth needs a supported browser and a secure page origin. For local use, serve this folder from <code>localhost</code> (for example with VS Code Live Server). The device sends the file in BLE notifications; the page does not upload or change data on the spectrometer.</p>
   </main>
 
   <script>
