@@ -4,7 +4,7 @@
 namespace ble {
 
 // Start advertising the BLE CSV service.
-bool begin();
+bool begin(const char* firmwareVersion);
 
 // Process queued commands and send at most one CSV data chunk.
 void loop();

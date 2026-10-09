@@ -7,7 +7,7 @@
 #include "ui/ui.h"
 #include "nvs_manager/nvs_manager.h"
 
-
+#define FIRMWARE_VERSION "1.2"
 
 //I2C pins
 #define SDA 27
@@ -121,7 +121,7 @@ void setup() {
   if (csvResult == csv::Result::MountFailed) {
     Serial.println("[CSV] Prepare the LittleFS image with PlatformIO uploadfs before logging.");
   }
-  if (!ble::begin()) {
+  if (!ble::begin(FIRMWARE_VERSION)) {
     Serial.println("[BLE] Failed to initialize CSV service.");
   }
 }

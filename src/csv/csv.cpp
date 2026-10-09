@@ -220,6 +220,12 @@ Result replaceWithHeader() {
     file.flush();
     file.close();
     if (!written) return Result::WriteFailed;
+    uint16_t stagedCount = 0;
+    const Result stagedResult = scanFile(TEMP_PATH, stagedCount);
+    if (stagedResult != Result::Ok || stagedCount != 0) {
+        LittleFS.remove(TEMP_PATH);
+        return stagedResult == Result::Ok ? Result::InvalidData : stagedResult;
+    }
     if (!LittleFS.rename(TEMP_PATH, FILE_PATH)) return Result::RenameFailed;
     return Result::Ok;
 }
@@ -455,6 +461,7 @@ Result clear() {
     const Result result = replaceWithHeader();
     if (result != Result::Ok) return result;
     ready = false;
+    recordCount = 0;
     uint16_t count = 0;
     const Result scanned = scanFile(FILE_PATH, count);
     if (scanned == Result::Ok) recordCount = count;

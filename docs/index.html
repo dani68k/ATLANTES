@@ -38,6 +38,21 @@
       margin-bottom: 28px;
     }
 
+    .version-badge {
+      position: fixed;
+      z-index: 10;
+      top: 16px;
+      right: max(16px, calc((100vw - 1120px) / 2));
+      padding: 5px 9px;
+      border: 1px solid #405362;
+      border-radius: 999px;
+      background: rgb(21 32 43 / 92%);
+      color: #a9b8c6;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
     .eyebrow {
       margin: 0 0 8px;
       color: #69d8c1;
@@ -98,6 +113,54 @@
     button:disabled {
       cursor: not-allowed;
       opacity: 0.48;
+    }
+
+    .dialog-backdrop {
+      width: min(440px, calc(100% - 32px));
+      max-width: none;
+      padding: 0;
+      border: 1px solid #405362;
+      border-radius: 18px;
+      background: #15202b;
+      color: #e7eef5;
+      box-shadow: 0 24px 80px rgb(0 0 0 / 55%);
+    }
+
+    .dialog-backdrop::backdrop {
+      background: rgb(5 10 16 / 76%);
+      backdrop-filter: blur(3px);
+    }
+
+    .dialog-content {
+      padding: 24px;
+    }
+
+    .dialog-content h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .dialog-message {
+      margin: 12px 0 0;
+      color: #a9b8c6;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .danger {
+      background: #ff7474;
+      color: #2a1114;
+    }
+
+    .danger:not(:disabled):hover {
+      background: #ff9292;
     }
 
     .primary {
@@ -232,6 +295,35 @@
       background: #202e3a;
     }
 
+    .select-all-control {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .csv-table input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      appearance: none;
+      border: 2px solid #8294a3;
+      border-radius: 50%;
+      background: #15202b;
+      cursor: pointer;
+    }
+
+    .csv-table input[type="checkbox"]:checked {
+      border-color: #70e0c6;
+      background: radial-gradient(circle, #70e0c6 48%, transparent 54%);
+    }
+
+    .csv-table input[type="checkbox"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
     .csv-table tr[aria-selected="true"] .select-column {
       background: #17463f;
     }
@@ -295,9 +387,9 @@
 
     .spectrum-chart {
       display: grid;
-      grid-template-columns: repeat(18, minmax(42px, 1fr));
-      gap: 8px;
-      min-width: 900px;
+      grid-template-columns: repeat(18, minmax(38px, 1fr));
+      gap: 2px;
+      min-width: 746px;
       height: 270px;
       padding: 18px 14px 12px;
     }
@@ -334,7 +426,7 @@
     }
 
     .spectrum-bar {
-      width: 68%;
+      width: 84%;
       border-radius: 5px 5px 0 0;
     }
 
@@ -414,6 +506,7 @@
   </style>
 </head>
 <body>
+  <span class="version-badge" id="versionBadge" aria-label="Firmware version">v—</span>
   <main>
     <header>
       <p class="eyebrow">Spectrometer · Bluetooth LE</p>
@@ -462,6 +555,17 @@
 
   </main>
 
+  <dialog class="dialog-backdrop" id="confirmationDialog" aria-labelledby="confirmationTitle" aria-describedby="confirmationMessage">
+    <form class="dialog-content" method="dialog">
+      <h2 id="confirmationTitle"></h2>
+      <p class="dialog-message" id="confirmationMessage"></p>
+      <div class="dialog-actions">
+        <button class="secondary" id="cancelConfirmation" value="cancel">Cancel</button>
+        <button class="danger" id="acceptConfirmation" value="confirm">Delete</button>
+      </div>
+    </form>
+  </dialog>
+
   <script>
     "use strict";
 
@@ -509,6 +613,10 @@
     const spectrumChart = document.querySelector("#spectrumChart");
     const setupValues = document.querySelector("#setupValues");
     const spectrumError = document.querySelector("#spectrumError");
+    const versionBadge = document.querySelector("#versionBadge");
+    const confirmationDialog = document.querySelector("#confirmationDialog");
+    const confirmationTitle = document.querySelector("#confirmationTitle");
+    const confirmationMessage = document.querySelector("#confirmationMessage");
 
     let device = null;
     let controlCharacteristic = null;
@@ -523,6 +631,7 @@
     let csvContents = null;
     let selectedRecordIndex = null;
     let selectedSampleId = null;
+    let selectedAllRecords = false;
     let csvHeaders = [];
     let csvRecords = [];
 
@@ -535,12 +644,15 @@
       const connected = Boolean(device?.gatt.connected && controlCharacteristic);
       requestButton.disabled = !connected || transferPending || deletePending;
       deleteRowButton.disabled = !connected || transferPending || deletePending ||
-        selectedRecordIndex === null || selectedSampleId === null;
+        (!selectedAllRecords && (selectedRecordIndex === null || selectedSampleId === null));
     }
 
     function clearSelection() {
       selectedRecordIndex = null;
       selectedSampleId = null;
+      selectedAllRecords = false;
+      const selectAll = csvTable.querySelector("#selectAllRecords");
+      if (selectAll) selectAll.checked = false;
       for (const row of csvTable.tBodies[0]?.rows ?? []) {
         row.setAttribute("aria-selected", "false");
         row.querySelector('input[type="radio"]').checked = false;
@@ -557,6 +669,21 @@
       receivedBytes = 0;
       transferPending = false;
       updateActionButtons();
+    }
+
+    function confirmDestructiveAction(title, message, confirmLabel = "Delete") {
+      confirmationTitle.textContent = title;
+      confirmationMessage.textContent = message;
+      document.querySelector("#acceptConfirmation").textContent = confirmLabel;
+      confirmationDialog.returnValue = "cancel";
+      confirmationDialog.showModal();
+      return new Promise((resolve) => {
+        confirmationDialog.addEventListener(
+          "close",
+          () => resolve(confirmationDialog.returnValue === "confirm"),
+          { once: true }
+        );
+      });
     }
 
     function parseCsv(text) {
@@ -614,7 +741,23 @@
       return rows;
     }
 
+    function selectAllRecords(checkbox) {
+      selectedAllRecords = checkbox.checked;
+      selectedRecordIndex = null;
+      selectedSampleId = null;
+      for (const row of csvTable.tBodies[0].rows) {
+        row.setAttribute("aria-selected", String(selectedAllRecords));
+        row.querySelector('input[type="radio"]').checked = selectedAllRecords;
+      }
+      delete fileMeta.dataset.selectedRecord;
+      spectrumPanel.hidden = true;
+      updateActionButtons();
+    }
+
     function selectRecord(index, rowElement, radio) {
+      selectedAllRecords = false;
+      const selectAll = csvTable.querySelector("#selectAllRecords");
+      if (selectAll) selectAll.checked = false;
       selectedRecordIndex = index;
       const sampleIdColumn = csvHeaders.findIndex(
         (header) => header.toLowerCase() === "sample_id"
@@ -804,7 +947,18 @@
       const selectionHeader = document.createElement("th");
       selectionHeader.className = "select-column";
       selectionHeader.scope = "col";
-      selectionHeader.textContent = "Select";
+      const selectAllLabel = document.createElement("label");
+      selectAllLabel.className = "select-all-control";
+      const selectAllCheckbox = document.createElement("input");
+      selectAllCheckbox.type = "checkbox";
+      selectAllCheckbox.id = "selectAllRecords";
+      selectAllCheckbox.disabled = records.length === 0;
+      selectAllCheckbox.setAttribute("aria-label", "Select all records");
+      selectAllCheckbox.addEventListener("change", () => selectAllRecords(selectAllCheckbox));
+      const selectAllText = document.createElement("span");
+      selectAllText.textContent = "Select";
+      selectAllLabel.append(selectAllCheckbox, selectAllText);
+      selectionHeader.append(selectAllLabel);
       headerRow.append(selectionHeader);
       for (const header of headers) {
         const cell = document.createElement("th");
@@ -824,7 +978,7 @@
         selectionCell.className = "select-column";
         const radio = document.createElement("input");
         radio.type = "radio";
-        radio.name = "selectedCsvRecord";
+        radio.name = `selectedCsvRecord-${index}`;
         radio.value = String(index);
         radio.setAttribute("aria-label", `Select record ${index + 1}`);
         radio.addEventListener("change", () => selectRecord(index, tableRow, radio));
@@ -914,6 +1068,12 @@
         return;
       }
 
+      const versionMatch = /^VERSION:(.+)$/.exec(message);
+      if (versionMatch) {
+        versionBadge.textContent = `v${versionMatch[1]}`;
+        return;
+      }
+
       if (message === "BUSY") {
         if (!transferPending) {
           transferChunks = [];
@@ -950,6 +1110,19 @@
         return;
       }
 
+      if (message === "CSV_CLEARED") {
+        if (!deletePending) {
+          setStatus("Received an unexpected CSV clear confirmation.", "error");
+          return;
+        }
+        clearTimeout(deleteTimer);
+        deleteTimer = null;
+        deletePending = false;
+        setStatus("CSV cleared. Refreshing the file…", "working");
+        requestCsv();
+        return;
+      }
+
       if (message.startsWith("ERROR:")) {
         const errors = {
           "ERROR:OPEN": "The device could not open /data.csv.",
@@ -957,6 +1130,7 @@
           "ERROR:COMMAND": "The device rejected the CSV request.",
           "ERROR:BUSY": "The device is busy; reconnect and try again.",
           "ERROR:DELETE": "The device could not delete the selected row.",
+          "ERROR:CLEAR": "The device could not clear the CSV. Check the serial log for details.",
           "ERROR:NOT_FOUND": "The selected CSV row no longer exists. Get the CSV again.",
           "ERROR:STALE": "The CSV changed after it was loaded. Get it again before deleting."
         };
@@ -1017,11 +1191,15 @@
         statusCharacteristic.addEventListener("characteristicvaluechanged", handleStatusNotification);
         await dataCharacteristic.startNotifications();
         await statusCharacteristic.startNotifications();
+        versionBadge.textContent = "v—";
 
         connectButton.disabled = true;
         disconnectButton.disabled = false;
         updateActionButtons();
         setStatus("Connected. Ready to receive the CSV.", "success");
+        await controlCharacteristic.writeValueWithResponse(
+          new TextEncoder().encode("GET_VERSION")
+        );
       } catch (error) {
         if (device?.gatt.connected) device.gatt.disconnect();
         clearTransfer();
@@ -1086,7 +1264,32 @@
         setStatus("Connect to the spectrometer before deleting a row.", "error");
         return;
       }
-      if (selectedRecordIndex === null || selectedSampleId === null || deletePending) {
+      if (deletePending) return;
+      if (selectedAllRecords) {
+        const confirmed = await confirmDestructiveAction(
+          "Delete all records?",
+          `This permanently removes all ${csvRecords.length} records from the spectrometer. The CSV header will be kept so new measurements can be logged.`,
+          "Delete all"
+        );
+        if (!confirmed) return;
+
+        deletePending = true;
+        updateActionButtons();
+        setStatus("Clearing all CSV records on the spectrometer…", "working");
+        deleteTimer = setTimeout(() => {
+          failDelete("Timed out waiting for the spectrometer to confirm the CSV clear.");
+        }, TRANSFER_TIMEOUT_MS);
+
+        try {
+          await controlCharacteristic.writeValueWithResponse(
+            new TextEncoder().encode("CLEAR_CSV")
+          );
+        } catch (error) {
+          failDelete(`Could not clear the CSV: ${error.message}`);
+        }
+        return;
+      }
+      if (selectedRecordIndex === null || selectedSampleId === null) {
         setStatus("Select a valid CSV row before deleting it.", "error");
         return;
       }
@@ -1096,9 +1299,12 @@
       );
       const label = labelColumn < 0 ? "" : csvRecords[selectedRecordIndex][labelColumn];
       const description = label ? ` (${label})` : "";
-      if (!confirm(`Permanently delete CSV row ${selectedRecordIndex + 1}${description} from the spectrometer?`)) {
-        return;
-      }
+      const confirmed = await confirmDestructiveAction(
+        "Delete selected record?",
+        `Permanently delete record ${selectedRecordIndex + 1}${description} from the spectrometer?`,
+        "Delete record"
+      );
+      if (!confirmed) return;
 
       const command = new TextEncoder().encode(
         `D,${selectedRecordIndex},${selectedSampleId}`
@@ -1145,6 +1351,9 @@
     downloadButton.addEventListener("click", downloadCsv);
     disconnectButton.addEventListener("click", disconnect);
     deleteRowButton.addEventListener("click", deleteSelectedRow);
+    confirmationDialog.addEventListener("click", (event) => {
+      if (event.target === confirmationDialog) confirmationDialog.close("cancel");
+    });
   </script>
 </body>
 </html>

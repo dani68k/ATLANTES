@@ -16,7 +16,7 @@ struct Record {
     char whiteLed[5] = {};
     char uvLed[5] = {};
     char irLed[5]  = {};
-    char gain[4] = {}; // setup of the measure
+    char gain[5] = {}; // setup of the measure
     float integrationTimeMs = 0.0f; // setup of the measure
     uint32_t measureTime = 0; // setup of the measure
     float temperature = 0.0f;
@@ -59,8 +59,9 @@ Result getRecordCount(uint16_t& count);
 // Stream the complete file, including its header (e.g. to Serial).
 Result exportTo(Print& output);
 
-// Explicitly replace this CSV with its header; do not format LittleFS.
-// Also allowed after begin() found invalid CSV data but mounted successfully.
+// Replace this CSV with a validated header; do not format LittleFS. On success,
+// leave the module ready to append records. Also allowed after begin() found
+// invalid CSV data but mounted successfully.
 Result clear();
 
 const char* resultMessage(Result result);

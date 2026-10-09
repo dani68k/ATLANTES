@@ -113,7 +113,7 @@ Todas las funciones están en el espacio de nombres `csv`:
 | `deleteRecordAt(rowIndex, expectedSampleId)` | Borrar una fila por índice 0-based, solo si su `Sample_id` coincide |
 | `getRecordCount(count)` | Consultar el contador; usar `count` solo si devuelve `Ok` |
 | `exportTo(output)` | Enviar el archivo completo, incluida la cabecera, a un objeto `Print` |
-| `clear()` | Borrar las medidas y dejar únicamente la cabecera |
+| `clear()` | Borrar las medidas, validar la cabecera y dejar el módulo listo para guardar |
 | `resultMessage(result)` | Obtener un texto de diagnóstico para un resultado |
 
 Las operaciones son síncronas. Deben ejecutarse desde la tarea principal,
@@ -126,6 +126,11 @@ la más nueva, sin contar la cabecera. Verifica el índice y el `sampleId`
 esperado, escribe un archivo temporal validado y solo entonces reemplaza
 `/data.csv`. Devuelve `RecordNotFound` si el índice no existe y `StaleRecord`
 si el identificador ya no coincide.
+
+`clear()` escribe y valida una cabecera en un archivo temporal antes de
+reemplazar `/data.csv`. Después vuelve a escanear el archivo final; solo
+devuelve `Ok` y permite nuevos `append()` si la cabecera es válida y el
+contador queda en cero.
 
 El módulo administra `/data.csv`; no modificar ese archivo por otra vía
 mientras se utiliza el contador en memoria. Si se reemplaza externamente,

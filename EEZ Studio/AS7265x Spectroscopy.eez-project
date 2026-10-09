@@ -326,7 +326,7 @@
               },
               "group": "",
               "groupIndex": 0,
-              "text": "Data not ready\nPress LIVE to start",
+              "text": "Data not ready\nPress RUN to start",
               "textType": "literal",
               "longMode": "WRAP",
               "recolor": true,

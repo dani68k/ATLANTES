@@ -17,15 +17,20 @@ constexpr char CONTROL_UUID[] = "9c5e1001-7e5a-4f2d-9a91-30e52e7b1b01";
 constexpr char DATA_UUID[] = "9c5e1002-7e5a-4f2d-9a91-30e52e7b1b01";
 constexpr char STATUS_UUID[] = "9c5e1003-7e5a-4f2d-9a91-30e52e7b1b01";
 constexpr char CSV_REQUEST[] = "GET_CSV";
+constexpr char VERSION_REQUEST[] = "GET_VERSION";
+constexpr char CLEAR_REQUEST[] = "CLEAR_CSV";
 constexpr char DELETE_PREFIX[] = "D,";
 constexpr size_t BLE_CHUNK_SIZE = 20;
 constexpr uint32_t NOTIFICATION_INTERVAL_MS = 10;
 constexpr UBaseType_t COMMAND_QUEUE_LENGTH = 4;
 constexpr UBaseType_t STATUS_QUEUE_LENGTH = 8;
 constexpr size_t STATUS_MESSAGE_LENGTH = 24;
+constexpr size_t MAX_VERSION_LENGTH = STATUS_MESSAGE_LENGTH - sizeof("VERSION:");
 
 enum class CommandType : uint8_t {
     GetCsv,
+    GetVersion,
+    ClearCsv,
     DeleteRecord,
     Invalid
 };
@@ -50,6 +55,7 @@ uint32_t transferSize = 0;
 uint32_t bytesSent = 0;
 uint32_t lastNotificationAt = 0;
 bool notificationSent = false;
+const char* firmwareVersion = nullptr;
 
 bool parseUnsigned(const char*& cursor, char delimiter, uint32_t maximum,
                    uint32_t& value) {
@@ -109,6 +115,10 @@ class ControlCallbacks final : public BLECharacteristicCallbacks {
         Command command;
         if (value == CSV_REQUEST) {
             command.type = CommandType::GetCsv;
+        } else if (value == VERSION_REQUEST) {
+            command.type = CommandType::GetVersion;
+        } else if (value == CLEAR_REQUEST) {
+            command.type = CommandType::ClearCsv;
         } else if (!parseDeleteCommand(value, command)) {
             command.type = CommandType::Invalid;
         }
@@ -151,8 +161,30 @@ void startTransfer() {
 }
 
 void processCommand(Command command) {
+    if (command.type == CommandType::GetVersion) {
+        char status[STATUS_MESSAGE_LENGTH];
+        snprintf(status, sizeof(status), "VERSION:%s", firmwareVersion);
+        sendStatus(status);
+        return;
+    }
     if (command.type == CommandType::GetCsv) {
         startTransfer();
+        return;
+    }
+    if (command.type == CommandType::ClearCsv) {
+        if (transferActive) {
+            sendStatus("ERROR:BUSY");
+            return;
+        }
+
+        const csv::Result result = csv::clear();
+        if (result == csv::Result::Ok) {
+            sendStatus("CSV_CLEARED");
+        } else {
+            Serial.printf("[BLE] CSV clear failed: %s\n",
+                          csv::resultMessage(result));
+            sendStatus("ERROR:CLEAR");
+        }
         return;
     }
     if (command.type == CommandType::DeleteRecord) {
@@ -234,8 +266,13 @@ bool sendNextStatus() {
 
 } // namespace
 
-bool begin() {
+bool begin(const char* version) {
     if (initialized) return true;
+    if (!version || strlen(version) == 0 || strlen(version) > MAX_VERSION_LENGTH) {
+        Serial.println("[BLE] Firmware version is missing or too long.");
+        return false;
+    }
+    firmwareVersion = version;
 
     if (!commandQueue) {
         commandQueue = xQueueCreate(COMMAND_QUEUE_LENGTH, sizeof(Command));

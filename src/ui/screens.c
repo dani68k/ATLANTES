@@ -40,7 +40,7 @@ void create_screen_main() {
             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_font(obj, &ui_font_montserrat_bold_10, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_font(obj, &ui_font_montserrat_extra_bold_12, LV_PART_MAIN | LV_STATE_PRESSED);
-            lv_label_set_text_static(obj, "Data not ready\nPress LIVE to start");
+            lv_label_set_text_static(obj, "Data not ready\nPress RUN to start");
         }
         {
             lv_obj_t *obj = lv_line_create(parent_obj);
