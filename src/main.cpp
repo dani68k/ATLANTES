@@ -7,7 +7,7 @@
 #include "ui/ui.h"
 #include "nvs_manager/nvs_manager.h"
 
-#define FIRMWARE_VERSION "1.2"
+#define FIRMWARE_VERSION "1.3"
 
 //I2C pins
 #define SDA 27

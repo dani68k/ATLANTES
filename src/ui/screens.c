@@ -833,7 +833,7 @@ void create_screen_main() {
                 }
                 {
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    lv_obj_set_pos(obj, -19, 0);
+                    lv_obj_set_pos(obj, -19, -1);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_text_font(obj, &ui_font_awsome, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -871,7 +871,7 @@ void create_screen_main() {
                 lv_obj_t *parent_obj = obj;
                 {
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    lv_obj_set_pos(obj, -19, 0);
+                    lv_obj_set_pos(obj, -19, -1);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_text_font(obj, &ui_font_awsome, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -900,7 +900,7 @@ void create_screen_main() {
                 lv_obj_t *parent_obj = obj;
                 {
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    lv_obj_set_pos(obj, -19, 0);
+                    lv_obj_set_pos(obj, -19, -1);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_text_font(obj, &ui_font_awsome, LV_PART_MAIN | LV_STATE_DEFAULT);

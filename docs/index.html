@@ -7,6 +7,14 @@
   <link rel="icon" type="image/png" href="./favicon.png">
   <title>AS7265x CSV Manager</title>
   <style>
+    @font-face {
+      font-family: "Font Awesome";
+      src: url("./fonts/fa-solid-900.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 900;
+      font-display: block;
+    }
+
     :root {
       color-scheme: dark;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -35,6 +43,11 @@
     }
 
     header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      column-gap: 24px;
+      row-gap: 12px;
       margin-bottom: 28px;
     }
 
@@ -53,18 +66,31 @@
       letter-spacing: 0.04em;
     }
 
-    .eyebrow {
-      margin: 0 0 8px;
-      color: #69d8c1;
-      font-size: 0.76rem;
-      font-weight: 750;
-      letter-spacing: 0.14em;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    .brand-name {
+      display: grid;
+      gap: 2px;
+      color: #e7eef5;
+      font-size: 0.83rem;
+      font-weight: 800;
+      line-height: 1.05;
       text-transform: uppercase;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-size: clamp(1.7rem, 4vw, 2.6rem);
       letter-spacing: -0.045em;
     }
 
@@ -91,17 +117,32 @@
     }
 
     button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       min-height: 44px;
       padding: 0 17px;
       border: 1px solid transparent;
       border-radius: 10px;
+      background: #108cf0;
+      color: #ffffff;
       font: inherit;
       font-weight: 700;
       cursor: pointer;
-      transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+      transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+    }
+
+    .button-icon {
+      font-family: "Font Awesome";
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1;
     }
 
     button:not(:disabled):active {
+      background: #00ff5e;
+      color: #0d141b;
       transform: translateY(1px);
     }
 
@@ -152,34 +193,6 @@
       justify-content: flex-end;
       gap: 10px;
       margin-top: 24px;
-    }
-
-    .danger {
-      background: #ff7474;
-      color: #2a1114;
-    }
-
-    .danger:not(:disabled):hover {
-      background: #ff9292;
-    }
-
-    .primary {
-      background: #70e0c6;
-      color: #10221f;
-    }
-
-    .primary:not(:disabled):hover {
-      background: #91f0d8;
-    }
-
-    .secondary {
-      border-color: #405362;
-      background: #202e3a;
-      color: #e7eef5;
-    }
-
-    .secondary:not(:disabled):hover {
-      border-color: #70e0c6;
     }
 
     .status {
@@ -462,15 +475,6 @@
       font-weight: 700;
     }
 
-    .empty {
-      display: grid;
-      min-height: 180px;
-      place-items: center;
-      padding: 24px;
-      color: #8294a3;
-      text-align: center;
-    }
-
     .instructions {
       margin: 18px 4px 0;
       color: #8294a3;
@@ -509,15 +513,21 @@
   <span class="version-badge" id="versionBadge" aria-label="Firmware version">v—</span>
   <main>
     <header>
-      <p class="eyebrow">Spectrometer · Bluetooth LE</p>
+      <div class="brand" aria-label="Spectrometer AS7265x, 18 bands">
+        <img class="brand-icon" src="./favicon.png" alt="">
+        <div class="brand-name">
+          <span>SPECTROMETER</span>
+          <span>AS7265x | 18 bands</span>
+        </div>
+      </div>
       <h1>CSV Manager</h1>
     </header>
 
     <section class="panel connection" aria-label="Bluetooth connection">
-      <button class="primary" id="connectButton" type="button">Connect device</button>
-      <button class="primary" id="requestButton" type="button" disabled>Get CSV</button>
-      <button class="secondary" id="downloadButton" type="button" disabled>Download CSV</button>
-      <button class="secondary" id="disconnectButton" type="button" disabled>Disconnect</button>
+      <button class="primary" id="connectButton" type="button"><span class="button-icon" aria-hidden="true">&#xf0c1;</span>Connect device</button>
+      <button class="primary" id="requestButton" type="button" disabled><span class="button-icon" aria-hidden="true">&#xf15c;</span>Get CSV</button>
+      <button class="secondary" id="downloadButton" type="button" disabled><span class="button-icon" aria-hidden="true">&#xf019;</span>Download CSV</button>
+      <button class="secondary" id="disconnectButton" type="button" disabled><span class="button-icon" aria-hidden="true">&#xf127;</span>Disconnect</button>
       <div class="status" id="status" role="status" aria-live="polite" data-kind="neutral">Ready to connect.</div>
     </section>
 
@@ -528,10 +538,9 @@
           <p class="file-meta" id="fileMeta">No file received yet.</p>
         </div>
         <div class="file-actions">
-          <button class="secondary" id="deleteRowButton" type="button" disabled>Delete selected row</button>
+          <button class="secondary" id="deleteRowButton" type="button" disabled><span class="button-icon" aria-hidden="true">&#xf1f8;</span>Delete selected row</button>
         </div>
       </div>
-      <div class="empty" id="emptyState">Connect to the spectrometer and request its CSV to see the records.</div>
       <div class="table-scroll" id="csvTableContainer" hidden>
         <table class="csv-table" id="csvTable" aria-label="CSV records"></table>
       </div>
@@ -603,7 +612,6 @@
     const deleteRowButton = document.querySelector("#deleteRowButton");
     const statusElement = document.querySelector("#status");
     const fileMeta = document.querySelector("#fileMeta");
-    const emptyState = document.querySelector("#emptyState");
     const csvTableContainer = document.querySelector("#csvTableContainer");
     const csvTable = document.querySelector("#csvTable");
     const spectrumPanel = document.querySelector("#spectrumPanel");
@@ -998,7 +1006,6 @@
 
       csvTable.replaceChildren(tableHead, tableBody);
       csvTableContainer.hidden = false;
-      emptyState.hidden = true;
       return records.length;
     }
 
@@ -1014,8 +1021,7 @@
         csvTable.replaceChildren();
         csvTableContainer.hidden = true;
         spectrumPanel.hidden = true;
-        emptyState.hidden = false;
-        emptyState.textContent = `The CSV cannot be displayed as a table: ${error.message} You can still download the received file.`;
+        setStatus(`The CSV cannot be displayed as a table: ${error.message} You can still download the received file.`, "error");
         fileMeta.textContent = `${byteLength.toLocaleString()} bytes received; invalid CSV format for row display.`;
       }
     }
@@ -1230,8 +1236,6 @@
       csvTable.replaceChildren();
       csvTableContainer.hidden = true;
       spectrumPanel.hidden = true;
-      emptyState.hidden = false;
-      emptyState.textContent = "Waiting for the spectrometer file…";
       fileMeta.textContent = "Waiting for the device…";
       transferChunks = [];
       receivedBytes = 0;
